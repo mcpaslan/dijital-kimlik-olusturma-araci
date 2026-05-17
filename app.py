@@ -88,6 +88,10 @@ def create_app(test=False, db_path=None):
         ca_info = get_ca_cert_info(app.config["CA_CERT"])
         return render_template("index.html", ca_info=ca_info)
 
+    @app.errorhandler(413)
+    def request_entity_too_large(error):
+        return render_template("error.html", title="Dosya Çok Büyük", message="Yüklediğiniz dosya izin verilen sınırı aşıyor (Maksimum 16 MB)."), 413
+
     return app
 
 

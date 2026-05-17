@@ -11,6 +11,14 @@ Bilgisayar güvenliği dersi kapsamında geliştirilen, **RSA-PSS + SHA-256** ta
 - **PKI Simülasyonu** — Kalıcı Demo Root CA, sertifika zinciri doğrulama
 - **Güvenlik** — Private key sunucuda saklanmaz, kullanıcıya indirilir
 
+## 📸 Ekran Görüntüleri (Screenshots)
+
+Aşağıdaki ekran görüntülerini `static/img/` klasörüne ekleyerek projenizin vitrinini zenginleştirebilirsiniz:
+
+- **Anahtar Üretimi:** `![Anahtar Oluşturma](static/img/screenshot-keys.png)`
+- **İmzalama Ekranı:** `![İmzalama](static/img/screenshot-sign.png)`
+- **Sertifika ve Doğrulama:** `![Doğrulama](static/img/screenshot-verify.png)`
+
 ## 🛠️ Teknolojiler
 
 | Teknoloji | Kullanım |

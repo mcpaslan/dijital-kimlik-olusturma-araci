@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: dijital-imza-test-app
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./storage:/app/storage
+      - ./instance:/app/instance
+    environment:
+      - SECRET_KEY=test-secret-key-123
+      - FLASK_ENV=testing
+      - FLASK_DEBUG=1
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - test-network
+
+  newman:
+    image: postman/newman:alpine
+    container_name: dijital-imza-newman
+    depends_on:
+      web:
+        condition: service_healthy
+    volumes:
+      - ./tests:/etc/newman
+    command: run /etc/newman/postman_collection.json
+    networks:
+      - test-network
+
+networks:
+  test-network:
+    driver: bridge

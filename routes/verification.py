@@ -35,6 +35,10 @@ def verify():
                     return render_template("verify.html")
 
                 cert_pem = cert_file.read()
+                if not cert_pem.strip():
+                    flash("Yüklenen sertifika dosyası boş.", "error")
+                    return render_template("verify.html")
+                    
                 public_key = load_public_key_from_certificate(cert_pem)
 
                 # Sertifika bilgisini parse et
@@ -59,12 +63,19 @@ def verify():
                     return render_template("verify.html")
 
                 pubkey_pem = pubkey_file.read()
+                if not pubkey_pem.strip():
+                    flash("Yüklenen public key dosyası boş.", "error")
+                    return render_template("verify.html")
+                    
                 public_key = load_public_key_from_pem(pubkey_pem)
                 chain_result = None
                 cert_info = None
 
+        except ValueError:
+            flash("Geçersiz veya bozuk PEM dosyası yüklendi. Lütfen dosya formatını kontrol edin.", "error")
+            return render_template("verify.html")
         except Exception as e:
-            flash(f"Anahtar/Sertifika yüklenemedi: {str(e)}", "error")
+            flash("Anahtar/Sertifika işlenirken beklenmeyen bir hata oluştu.", "error")
             return render_template("verify.html")
 
         # İmza bilgisini al
@@ -72,8 +83,15 @@ def verify():
         sig_file = request.files.get("sig_file")
         if sig_file and sig_file.filename:
             sig_content = sig_file.read().decode("utf-8")
-            sig_data = parse_sig_file(sig_content)
-            signature_b64 = sig_data.get("signature_b64", "")
+            if not sig_content.strip():
+                flash("Yüklenen imza dosyası boş.", "error")
+                return render_template("verify.html")
+            try:
+                sig_data = parse_sig_file(sig_content)
+                signature_b64 = sig_data.get("signature_b64", "")
+            except Exception:
+                flash("İmza dosyası (.sig) formatı hatalı.", "error")
+                return render_template("verify.html")
         else:
             signature_b64 = request.form.get("signature_input", "").strip()
 
@@ -100,6 +118,10 @@ def verify():
                     return render_template("verify.html")
 
                 file_data = file.read()
+                if not file_data:
+                    flash("Boş dosya doğrulanamaz. Lütfen geçerli bir dosya yükleyin.", "error")
+                    return render_template("verify.html")
+                    
                 result = verify_file(file_data, signature_b64, public_key)
                 result["type"] = "file"
                 result["filename"] = file.filename
