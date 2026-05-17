@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Dijital İmzalama{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>✍️ Dijital İmzalama</h1>
+    <p>Metin veya dosyayı private key ile dijital olarak imzalayın</p>
+</div>
+
+<div class="info-box">
+    <span class="icon">ℹ️</span>
+    <span>İmzalama işlemi: Veri → SHA-256 hash → Prehashed → RSA-PSS imza. Private key dosyanızı yüklemeniz gerekmektedir.</span>
+</div>
+
+<div class="card">
+    <div class="card-title">İmzalama</div>
+
+    <!-- Tab Switch: Metin / Dosya -->
+    <div class="tab-switch">
+        <input type="radio" name="sign_tab" id="tab_text" value="text" checked>
+        <label for="tab_text" onclick="switchSignTab('text')">📝 Metin İmzala</label>
+        <input type="radio" name="sign_tab" id="tab_file" value="file">
+        <label for="tab_file" onclick="switchSignTab('file')">📄 Dosya İmzala</label>
+    </div>
+
+    <!-- Metin İmzalama Formu -->
+    <div class="tab-content active" id="sign_text_form">
+        <form method="POST" action="{{ url_for('signing.sign') }}" enctype="multipart/form-data">
+            <input type="hidden" name="sign_type" value="text">
+            <div class="form-group">
+                <label for="text_input">İmzalanacak Metin</label>
+                <textarea class="form-control" id="text_input" name="text_input" placeholder="İmzalanacak metni buraya yazın..." required></textarea>
+            </div>
+            <div class="form-group">
+                <label for="private_key_file_text">Private Key Dosyası (.pem)</label>
+                <input type="file" class="form-control-file" id="private_key_file_text" name="private_key_file" accept=".pem" required>
+            </div>
+            <button type="submit" class="btn btn-primary">✍️ Metni İmzala</button>
+        </form>
+    </div>
+
+    <!-- Dosya İmzalama Formu -->
+    <div class="tab-content" id="sign_file_form">
+        <form method="POST" action="{{ url_for('signing.sign') }}" enctype="multipart/form-data">
+            <input type="hidden" name="sign_type" value="file">
+            <div class="form-group">
+                <label for="file_input">İmzalanacak Dosya</label>
+                <input type="file" class="form-control-file" id="file_input" name="file_input" required>
+            </div>
+            <div class="form-group">
+                <label for="private_key_file_file">Private Key Dosyası (.pem)</label>
+                <input type="file" class="form-control-file" id="private_key_file_file" name="private_key_file" accept=".pem" required>
+            </div>
+            <button type="submit" class="btn btn-primary">✍️ Dosyayı İmzala</button>
+        </form>
+    </div>
+</div>
+
+{% if result %}
+<!-- İmzalama Sonucu -->
+<div class="card" style="margin-top: 1.5rem;">
+    <div class="card-title">✅ İmzalama Sonucu</div>
+    <div class="result-box">
+        <div class="result-row">
+            <div class="result-label">Algoritma</div>
+            <pre>{{ result.algorithm }}</pre>
+        </div>
+        <div class="result-row">
+            <div class="result-label">SHA-256 Hash (Hex)</div>
+            <pre>{{ result.hash_hex }}</pre>
+        </div>
+        <div class="result-row">
+            <div class="result-label">İmza (Base64)</div>
+            <pre>{{ result.signature_b64 }}</pre>
+        </div>
+        <div class="result-row">
+            <div class="result-label">Zaman Damgası</div>
+            <pre>{{ result.timestamp }}</pre>
+        </div>
+    </div>
+
+    {% if result.type == 'file' %}
+    <form method="POST" action="{{ url_for('signing.download_sig') }}" style="margin-top: 1rem;">
+        <input type="hidden" name="sig_content" value="{{ result.sig_content }}">
+        <input type="hidden" name="filename" value="{{ result.filename }}">
+        <button type="submit" class="btn btn-success">⬇️ İmza Dosyası İndir (.sig)</button>
+    </form>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+function switchSignTab(type) {
+    document.getElementById('sign_text_form').classList.toggle('active', type === 'text');
+    document.getElementById('sign_file_form').classList.toggle('active', type === 'file');
+}
+</script>
+{% endblock %}

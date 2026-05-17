@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Dijital İmza Aracı — Ana Sayfa{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Dijital İmza Oluşturma ve Doğrulama Aracı</h1>
+    <p>RSA-PSS + SHA-256 tabanlı dijital imza sistemi ile basit PKI simülasyonu</p>
+</div>
+
+<!-- Nasıl Çalışır -->
+<h2 style="font-size: 1.2rem; margin-bottom: 1rem;">📋 Nasıl Çalışır?</h2>
+<div class="steps">
+    <a href="{{ url_for('keys.generate') }}" class="step" style="text-decoration:none; color:inherit;">
+        <div class="step-number">1</div>
+        <div class="step-icon">🔑</div>
+        <h3>Anahtar Oluştur</h3>
+        <p>RSA-2048/4096 anahtar çifti üretin. Private key'inizi indirin.</p>
+    </a>
+    <a href="{{ url_for('certificates.create') }}" class="step" style="text-decoration:none; color:inherit;">
+        <div class="step-number">2</div>
+        <div class="step-icon">📜</div>
+        <h3>Sertifika Üret</h3>
+        <p>Demo CA tarafından imzalı X.509 sertifika oluşturun.</p>
+    </a>
+    <a href="{{ url_for('signing.sign') }}" class="step" style="text-decoration:none; color:inherit;">
+        <div class="step-number">3</div>
+        <div class="step-icon">✍️</div>
+        <h3>İmzala</h3>
+        <p>Metin veya dosyayı private key ile dijital olarak imzalayın.</p>
+    </a>
+    <a href="{{ url_for('verification.verify') }}" class="step" style="text-decoration:none; color:inherit;">
+        <div class="step-number">4</div>
+        <div class="step-icon">✅</div>
+        <h3>Doğrula</h3>
+        <p>İmzayı public key veya sertifika ile doğrulayın.</p>
+    </a>
+</div>
+
+{% endblock %}

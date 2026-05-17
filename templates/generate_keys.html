@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Anahtar Çifti Oluştur{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>🔑 Anahtar Çifti Oluştur</h1>
+    <p>RSA public/private key çifti oluşturun</p>
+</div>
+
+<div class="info-box">
+    <span class="icon">ℹ️</span>
+    <span>Oluşturulan private key yalnızca size indirilecektir, sunucuda <strong>saklanmaz</strong>. Lütfen private key dosyanızı güvenli bir yerde saklayın.</span>
+</div>
+
+{% if not success %}
+<div class="card">
+    <div class="card-title">Yeni Anahtar Çifti</div>
+    <form method="POST" action="{{ url_for('keys.generate') }}">
+        <div class="form-group">
+            <label for="common_name">Ad Soyad</label>
+            <input type="text" class="form-control" id="common_name" name="common_name" placeholder="Örn: Ahmet Yılmaz" required>
+        </div>
+        <div class="form-group">
+            <label for="email">E-posta</label>
+            <input type="email" class="form-control" id="email" name="email" placeholder="Örn: ahmet@email.com" required>
+        </div>
+        <div class="form-group">
+            <label for="key_size">Anahtar Boyutu</label>
+            <select class="form-control" id="key_size" name="key_size">
+                <option value="2048" selected>RSA-2048 (Önerilen)</option>
+                <option value="4096">RSA-4096 (Yüksek Güvenlik)</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">🔑 Anahtar Çifti Oluştur</button>
+    </form>
+</div>
+{% else %}
+<!-- Başarılı sonuç -->
+<div class="alert alert-success">✅ Anahtar çifti başarıyla oluşturuldu! Private key'inizi hemen indirin.</div>
+
+<div class="card" style="margin-bottom: 1.5rem;">
+    <div class="card-title">⚠️ Private Key — İndirin ve Güvenli Saklayın</div>
+    <div class="result-box">
+        <div class="result-row">
+            <div class="result-label">PRIVATE KEY (PEM)</div>
+            <pre>{{ private_key_pem }}</pre>
+        </div>
+    </div>
+    <form method="POST" action="{{ url_for('keys.download_private_key') }}" style="margin-top: 1rem;">
+        <input type="hidden" name="private_key_pem" value="{{ private_key_pem }}">
+        <input type="hidden" name="common_name" value="{{ user.common_name }}">
+        <button type="submit" class="btn btn-success">⬇️ Private Key İndir (.pem)</button>
+    </form>
+</div>
+
+<div class="card">
+    <div class="card-title">🔓 Public Key (Sunucuda Saklanır)</div>
+    <div class="result-box">
+        <div class="result-row">
+            <div class="result-label">PUBLIC KEY (PEM)</div>
+            <pre>{{ public_key_pem }}</pre>
+        </div>
+    </div>
+    <div style="margin-top: 1rem;">
+        <div class="cert-detail">
+            <div class="label">Kullanıcı</div>
+            <div class="value">{{ user.common_name }}</div>
+        </div>
+        <div class="cert-detail">
+            <div class="label">E-posta</div>
+            <div class="value">{{ user.email }}</div>
+        </div>
+        <div class="cert-detail">
+            <div class="label">Anahtar Boyutu</div>
+            <div class="value">RSA-{{ user.key_size }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="btn-group" style="margin-top: 1.5rem;">
+    <a href="{{ url_for('keys.generate') }}" class="btn btn-outline">🔑 Yeni Anahtar Oluştur</a>
+    <a href="{{ url_for('certificates.create') }}" class="btn btn-primary">📜 Sertifika Oluştur →</a>
+</div>
+{% endif %}
+
+<!-- Kayıtlı kullanıcılar linki -->
+<div style="margin-top: 2rem; text-align: center;">
+    <a href="{{ url_for('keys.list_keys') }}" class="btn btn-outline btn-sm">📋 Kayıtlı Kullanıcıları Görüntüle</a>
+</div>
+{% endblock %}

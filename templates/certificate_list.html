@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Sertifika Listesi{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📋 Sertifika Listesi</h1>
+    <p>Oluşturulmuş tüm X.509 sertifikalar</p>
+</div>
+
+{% if certificates %}
+<div class="card">
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Kullanıcı</th>
+                    <th>Seri No</th>
+                    <th>İmzalayan</th>
+                    <th>Algoritma</th>
+                    <th>Durum</th>
+                    <th>İşlem</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cert in certificates %}
+                <tr>
+                    <td>{{ cert.id }}</td>
+                    <td><strong>{{ cert.user.common_name }}</strong></td>
+                    <td style="font-family: var(--font-mono); font-size: 0.8rem;">{{ cert.serial_number[:16] }}...</td>
+                    <td>{{ cert.issuer.split(',')[0] if cert.issuer else 'N/A' }}</td>
+                    <td>{{ cert.algorithm }}</td>
+                    <td>
+                        {% if cert.is_revoked %}
+                        <span class="badge badge-danger">İptal</span>
+                        {% else %}
+                        <span class="badge badge-success">Aktif</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('certificates.view', cert_id=cert.id) }}" class="btn btn-outline btn-sm">Görüntüle</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="card" style="text-align: center; padding: 3rem;">
+    <p style="font-size: 2rem; margin-bottom: 1rem;">📜</p>
+    <p style="color: var(--text-muted);">Henüz sertifika oluşturulmamış.</p>
+    <a href="{{ url_for('certificates.create') }}" class="btn btn-primary" style="margin-top: 1rem;">Sertifika Oluştur</a>
+</div>
+{% endif %}
+{% endblock %}

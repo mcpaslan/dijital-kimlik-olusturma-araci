@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Sertifika Oluştur{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📜 Sertifika Oluştur</h1>
+    <p>Demo Root CA tarafından imzalı X.509 sertifika üretin</p>
+</div>
+
+<div class="info-box">
+    <span class="icon">ℹ️</span>
+    <span>Sertifika, public key'inizi kimliğinize bağlar ve Demo Root CA tarafından imzalanır. Sertifika oluşturmak için önce anahtar çifti oluşturmuş olmalısınız.</span>
+</div>
+
+<div class="card">
+    <div class="card-title">Sertifika Oluştur</div>
+    {% if users %}
+    <form method="POST" action="{{ url_for('certificates.create') }}">
+        <div class="form-group">
+            <label for="user_id">Kullanıcı Seçin</label>
+            <select class="form-control" id="user_id" name="user_id" required>
+                <option value="">-- Kullanıcı seçin --</option>
+                {% for user in users %}
+                <option value="{{ user.id }}">{{ user.common_name }} ({{ user.email }}) — RSA-{{ user.key_size }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">📜 Sertifika Oluştur</button>
+    </form>
+    {% else %}
+    <p style="color: var(--text-muted);">Sertifika oluşturmak için önce anahtar çifti oluşturmalısınız.</p>
+    <a href="{{ url_for('keys.generate') }}" class="btn btn-primary" style="margin-top: 1rem;">🔑 Anahtar Oluştur</a>
+    {% endif %}
+</div>
+
+<!-- Mevcut sertifikalar -->
+<div style="margin-top: 2rem; text-align: center;">
+    <a href="{{ url_for('certificates.list_certs') }}" class="btn btn-outline btn-sm">📋 Tüm Sertifikaları Görüntüle</a>
+</div>
+{% endblock %}

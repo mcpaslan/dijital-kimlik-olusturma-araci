@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Sertifika Detayları{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📜 Sertifika Detayları</h1>
+    <p>X.509 sertifika bilgileri ve CA doğrulama sonucu</p>
+</div>
+
+<!-- CA Doğrulama Sonucu -->
+<div class="verify-result {{ 'valid' if chain_result.is_valid else 'invalid' }}">
+    <div class="status-icon">{{ '✅' if chain_result.is_valid else '❌' }}</div>
+    <div class="status-text">{{ 'Sertifika Geçerli' if chain_result.is_valid else 'Sertifika Geçersiz' }}</div>
+    {% for detail in chain_result.details %}
+    <div class="detail-item">{{ detail }}</div>
+    {% endfor %}
+</div>
+
+<!-- Sertifika Bilgileri -->
+<div class="card" style="margin-top: 1.5rem;">
+    <div class="card-title">📋 Sertifika Bilgileri</div>
+    <div class="cert-detail">
+        <div class="label">Konu (Subject)</div>
+        <div class="value">{{ cert_info.subject }}</div>
+    </div>
+    <div class="cert-detail">
+        <div class="label">Kullanıcı Adı</div>
+        <div class="value">{{ cert_info.subject_cn }}</div>
+    </div>
+    <div class="cert-detail">
+        <div class="label">E-posta</div>
+        <div class="value">{{ cert_info.subject_email }}</div>
+    </div>
+    <div class="cert-detail">
+        <div class="label">İmzalayan (Issuer)</div>
+        <div class="value">{{ cert_info.issuer_cn }}</div>
+    </div>
+    <div class="cert-detail">
+        <div class="label">Seri Numarası</div>
+        <div class="value">{{ cert_info.serial_number }}</div>
+    </div>
+    <div class="cert-detail">
+        <div class="label">Geçerlilik Başlangıcı</div>
+        <div class="value">{{ cert_info.not_valid_before }}</div>
+    </div>
+    <div class="cert-detail">
+        <div class="label">Geçerlilik Bitişi</div>
+        <div class="value">{{ cert_info.not_valid_after }}</div>
+    </div>
+    <div class="cert-detail">
+        <div class="label">Algoritma</div>
+        <div class="value">{{ cert_info.algorithm }}</div>
+    </div>
+    <div class="cert-detail">
+        <div class="label">Sürüm</div>
+        <div class="value">{{ cert_info.version }}</div>
+    </div>
+    <div class="cert-detail">
+        <div class="label">Public Key Boyutu</div>
+        <div class="value">{{ cert_info.public_key_size }} bit</div>
+    </div>
+    <div class="cert-detail">
+        <div class="label">Durum</div>
+        <div class="value">
+            {% if cert_info.is_expired %}
+            <span class="badge badge-danger">Süresi Dolmuş</span>
+            {% elif certificate.is_revoked %}
+            <span class="badge badge-danger">İptal Edilmiş</span>
+            {% else %}
+            <span class="badge badge-success">Aktif</span>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Sertifika PEM -->
+<div class="card" style="margin-top: 1.5rem;">
+    <div class="card-title">🔒 Sertifika (PEM)</div>
+    <div class="result-box">
+        <pre>{{ certificate.certificate_pem }}</pre>
+    </div>
+</div>
+
+<div class="btn-group" style="margin-top: 1.5rem;">
+    <a href="{{ url_for('certificates.download', cert_id=certificate.id) }}" class="btn btn-success">⬇️ Sertifika İndir (.pem)</a>
+    <a href="{{ url_for('certificates.list_certs') }}" class="btn btn-outline">📋 Tüm Sertifikalar</a>
+    <a href="{{ url_for('signing.sign') }}" class="btn btn-primary">✍️ İmzala →</a>
+</div>
+{% endblock %}

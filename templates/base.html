@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Dijital İmza Oluşturma ve Doğrulama Aracı — Bilgisayar Güvenliği Projesi">
+    <title>{% block title %}Dijital İmza Aracı{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="navbar-inner">
+            <a href="{{ url_for('index') }}" class="navbar-brand">
+                <span class="icon">🔐</span>
+                <span>Dijital İmza Aracı</span>
+            </a>
+            <ul class="navbar-nav">
+                <li><a href="{{ url_for('index') }}" class="{% if request.endpoint == 'index' %}active{% endif %}">🏠 Ana Sayfa</a></li>
+                <li><a href="{{ url_for('keys.generate') }}" class="{% if request.endpoint and 'keys' in request.endpoint %}active{% endif %}">🔑 Anahtar Oluştur</a></li>
+                <li><a href="{{ url_for('certificates.create') }}" class="{% if request.endpoint and 'certificates' in request.endpoint %}active{% endif %}">📜 Sertifika</a></li>
+                <li><a href="{{ url_for('signing.sign') }}" class="{% if request.endpoint and 'signing' in request.endpoint %}active{% endif %}">✍️ İmzala</a></li>
+                <li><a href="{{ url_for('verification.verify') }}" class="{% if request.endpoint and 'verification' in request.endpoint %}active{% endif %}">✅ Doğrula</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">
+            {% if category == 'success' %}✅{% elif category == 'error' %}❌{% elif category == 'warning' %}⚠️{% else %}ℹ️{% endif %}
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>🔐 Dijital İmza Oluşturma ve Doğrulama Aracı — Bilgisayar Güvenliği Dersi Projesi</p>
+        <p>RSA-PSS + SHA-256 | Python Flask | 2026</p>
+    </footer>
+
+    <!-- Help Modal -->
+    <div class="modal-overlay" id="helpModal">
+        <div class="modal">
+            <h2>🔐 Hoş Geldiniz!</h2>
+            <p>Bu araç, dijital imza oluşturma ve doğrulama işlemlerini gerçekleştirmenizi sağlar. Temel PKI (Public Key Infrastructure) simülasyonu içerir.</p>
+            <p><strong>Başlangıç adımları:</strong></p>
+            <p>1️⃣ Anahtar çifti oluşturun<br>
+               2️⃣ Sertifika üretin<br>
+               3️⃣ Metin veya dosya imzalayın<br>
+               4️⃣ İmzayı doğrulayın</p>
+            <button class="btn btn-primary" onclick="closeHelpModal()">Anladım, Başlayalım!</button>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

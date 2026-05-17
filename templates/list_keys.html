@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Kayıtlı Kullanıcılar{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📋 Kayıtlı Kullanıcılar</h1>
+    <p>Anahtar çifti oluşturulmuş kullanıcılar ve public key bilgileri</p>
+</div>
+
+{% if users %}
+<div class="card">
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Ad Soyad</th>
+                    <th>E-posta</th>
+                    <th>Anahtar Boyutu</th>
+                    <th>Oluşturma Tarihi</th>
+                    <th>İşlem</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.id }}</td>
+                    <td><strong>{{ user.common_name }}</strong></td>
+                    <td>{{ user.email }}</td>
+                    <td><span class="badge badge-success">RSA-{{ user.key_size }}</span></td>
+                    <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M') if user.created_at else 'N/A' }}</td>
+                    <td>
+                        <a href="{{ url_for('certificates.create') }}" class="btn btn-outline btn-sm">📜 Sertifika Oluştur</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="card" style="text-align: center; padding: 3rem;">
+    <p style="font-size: 2rem; margin-bottom: 1rem;">🔑</p>
+    <p style="color: var(--text-muted);">Henüz kayıtlı kullanıcı bulunmuyor.</p>
+    <a href="{{ url_for('keys.generate') }}" class="btn btn-primary" style="margin-top: 1rem;">Anahtar Çifti Oluştur</a>
+</div>
+{% endif %}
+{% endblock %}
