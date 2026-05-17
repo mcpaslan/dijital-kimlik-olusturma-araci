@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: dijital-imza-app
+    ports:
+      - "5002:5000"
+    volumes:
+      - ./storage:/app/storage
+      - ./instance:/app/instance
+    environment:
+      - SECRET_KEY=dev-secret-key-dijital-imza-2026
+    restart: unless-stopped
