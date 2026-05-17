@@ -4,7 +4,7 @@
 {% block content %}
 <div class="page-header">
     <h1>🔑 Anahtar Çifti Oluştur</h1>
-    <p>RSA public/private key çifti oluşturun</p>
+    <p>RSA veya Ed25519 public/private key çifti oluşturun</p>
 </div>
 
 <div class="info-box">
@@ -25,15 +25,43 @@
             <input type="email" class="form-control" id="email" name="email" placeholder="Örn: ahmet@email.com" required>
         </div>
         <div class="form-group">
+            <label for="key_algorithm">Anahtar Algoritması</label>
+            <select class="form-control" id="key_algorithm" name="key_algorithm" onchange="updateKeySizeOptions()">
+                <option value="RSA" selected>RSA (Önerilen)</option>
+                <option value="Ed25519">Ed25519 (Modern & Hızlı)</option>
+            </select>
+        </div>
+        <div class="form-group">
             <label for="key_size">Anahtar Boyutu</label>
             <select class="form-control" id="key_size" name="key_size">
-                <option value="2048" selected>RSA-2048 (Önerilen)</option>
+                <option value="2048" selected>RSA-2048</option>
                 <option value="4096">RSA-4096 (Yüksek Güvenlik)</option>
             </select>
         </div>
         <button type="submit" class="btn btn-primary">🔑 Anahtar Çifti Oluştur</button>
     </form>
 </div>
+
+<script>
+function updateKeySizeOptions() {
+    const algorithm = document.getElementById('key_algorithm').value;
+    const keySizeSelect = document.getElementById('key_size');
+    
+    if (algorithm === 'Ed25519') {
+        // Ed25519 için sabit 256-bit
+        keySizeSelect.innerHTML = '<option value="256">Ed25519-256 (Sabit)</option>';
+        keySizeSelect.disabled = true;
+    } else {
+        // RSA seçenekleri
+        keySizeSelect.innerHTML = `
+            <option value="2048" selected>RSA-2048</option>
+            <option value="4096">RSA-4096 (Yüksek Güvenlik)</option>
+        `;
+        keySizeSelect.disabled = false;
+    }
+}
+</script>
+
 {% else %}
 <!-- Başarılı sonuç -->
 <div class="alert alert-success">✅ Anahtar çifti başarıyla oluşturuldu! Private key'inizi hemen indirin.</div>
@@ -71,8 +99,12 @@
             <div class="value">{{ user.email }}</div>
         </div>
         <div class="cert-detail">
+            <div class="label">Anahtar Algoritması</div>
+            <div class="value">{{ user.key_algorithm }}</div>
+        </div>
+        <div class="cert-detail">
             <div class="label">Anahtar Boyutu</div>
-            <div class="value">RSA-{{ user.key_size }}</div>
+            <div class="value">{{ user.key_algorithm }}-{{ user.key_size }}</div>
         </div>
     </div>
 </div>

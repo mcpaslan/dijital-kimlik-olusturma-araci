@@ -2,8 +2,9 @@
 Signer — Dijital imzalama modülü.
 
 Metin ve dosya imzalama işlemlerini gerçekleştirir.
-RSA-PSS + SHA-256 kullanılır.
-Prehashed ile çift hash'leme önlenir.
+Desteklenen algoritmalar:
+  - RSA-PSS + SHA-256 (Prehashed)
+  - Ed25519
 """
 
 import base64
@@ -11,7 +12,7 @@ import hashlib
 from datetime import datetime, timezone
 
 from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.asymmetric import padding, utils
+from cryptography.hazmat.primitives.asymmetric import padding, utils, ed25519
 
 
 def compute_sha256_hash(data: bytes) -> bytes:
@@ -26,7 +27,7 @@ def compute_sha256_hash(data: bytes) -> bytes:
     return hashlib.sha256(data).digest()
 
 
-def sign_data(data: bytes, private_key) -> dict:
+def sign_data_rsa(data: bytes, private_key) -> dict:
     """Veriyi RSA-PSS ile imzalar.
 
     Akış: data → SHA-256 hash → Prehashed(SHA256) → RSA-PSS imza
@@ -36,11 +37,7 @@ def sign_data(data: bytes, private_key) -> dict:
         private_key: RSA private key nesnesi.
 
     Returns:
-        İmza bilgilerini içeren dict:
-          - signature_b64: İmza (Base64)
-          - hash_hex: SHA-256 hash (hex)
-          - algorithm: Kullanılan algoritma
-          - timestamp: İmzalama zamanı
+        İmza bilgilerini içeren dict.
     """
     # 1. SHA-256 hash hesapla
     data_hash = compute_sha256_hash(data)
@@ -61,6 +58,48 @@ def sign_data(data: bytes, private_key) -> dict:
         "algorithm": "RSA-PSS + SHA-256 (Prehashed)",
         "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
     }
+
+
+def sign_data_ed25519(data: bytes, private_key) -> dict:
+    """Veriyi Ed25519 ile imzalar.
+
+    Args:
+        data: İmzalanacak veri (metin veya dosya içeriği, bytes).
+        private_key: Ed25519 private key nesnesi.
+
+    Returns:
+        İmza bilgilerini içeren dict.
+    """
+    # Ed25519 doğrudan veriyi imzalar (hash hesaplamıyor)
+    signature = private_key.sign(data)
+    data_hash = compute_sha256_hash(data)
+
+    return {
+        "signature_b64": base64.b64encode(signature).decode("utf-8"),
+        "hash_hex": data_hash.hex(),
+        "algorithm": "Ed25519",
+        "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
+    }
+
+
+def sign_data(data: bytes, private_key) -> dict:
+    """Veriyi imzalar. Anahtar türüne göre otomatik algoritma seçer.
+
+    Args:
+        data: İmzalanacak veri (metin veya dosya içeriği, bytes).
+        private_key: Private key nesnesi (RSA veya Ed25519).
+
+    Returns:
+        İmza bilgilerini içeren dict:
+          - signature_b64: İmza (Base64)
+          - hash_hex: SHA-256 hash (hex)
+          - algorithm: Kullanılan algoritma
+          - timestamp: İmzalama zamanı
+    """
+    if isinstance(private_key, ed25519.Ed25519PrivateKey):
+        return sign_data_ed25519(data, private_key)
+    else:
+        return sign_data_rsa(data, private_key)
 
 
 def sign_text(text: str, private_key) -> dict:

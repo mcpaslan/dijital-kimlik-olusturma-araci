@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Sertifikayı İptal Et{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>⚠️ Sertifikayı İptal Et</h1>
+    <p>Sertifikayı kalıcı olarak iptal etmek için lütfen bir sebep belirtiniz</p>
+</div>
+
+{% if not request.method == "POST" %}
+<div class="alert alert-warning">
+    <strong>Dikkat!</strong> Bir sertifikayı iptal ettikten sonra bu sertifika artık geçerli olmayacaktır. İptal edilmiş sertifikalarla yapılan imzalar doğrulamada başarısız olacaktır.
+</div>
+{% endif %}
+
+<div class="card" style="max-width: 600px; margin: 0 auto;">
+    <div class="card-title">Sertifika Bilgileri</div>
+    <div style="margin-bottom: 1.5rem;">
+        <div class="cert-detail">
+            <div class="label">Sertifika Sahibi</div>
+            <div class="value">{{ certificate.user.common_name }}</div>
+        </div>
+        <div class="cert-detail">
+            <div class="label">E-posta</div>
+            <div class="value">{{ certificate.user.email }}</div>
+        </div>
+        <div class="cert-detail">
+            <div class="label">Sertifika No</div>
+            <div class="value">{{ certificate.serial_number }}</div>
+        </div>
+        <div class="cert-detail">
+            <div class="label">Durum</div>
+            <div class="value">
+                {% if certificate.is_revoked %}
+                    <span style="color: #dc3545;">❌ İptal Edilmiş</span>
+                {% else %}
+                    <span style="color: #28a745;">✅ Aktif</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {% if not certificate.is_revoked %}
+    <form method="POST" action="{{ url_for('certificates.revoke', cert_id=certificate.id) }}" style="margin-top: 1.5rem;">
+        <div class="form-group">
+            <label for="revoke_reason"><strong>İptal Sebebi *</strong></label>
+            <textarea class="form-control" id="revoke_reason" name="revoke_reason" 
+                      placeholder="Örn: Anahtar kayboldu, Değişim talebi, Güvenlik soruşturması vb."
+                      rows="4" maxlength="255" required></textarea>
+            <small style="color: #666;">En fazla 255 karakter</small>
+        </div>
+        <div style="margin-top: 1rem;">
+            <button type="submit" class="btn btn-danger">⚠️ Sertifikayı İptal Et</button>
+            <a href="{{ url_for('certificates.view', cert_id=certificate.id) }}" class="btn btn-outline">İptal</a>
+        </div>
+    </form>
+    {% else %}
+    <div class="alert alert-info" style="margin-bottom: 1rem;">
+        <strong>Bu sertifika zaten iptal edilmiş.</strong>
+        <div style="margin-top: 0.5rem;">
+            <strong>İptal Sebebi:</strong> {{ certificate.revoke_reason }}
+        </div>
+        <div>
+            <strong>İptal Tarihi:</strong> {{ certificate.revoked_at.strftime('%Y-%m-%d %H:%M:%S UTC') }}
+        </div>
+    </div>
+    <form method="POST" action="{{ url_for('certificates.restore', cert_id=certificate.id) }}" style="margin-top: 1rem;">
+        <button type="submit" class="btn btn-warning">🔄 Sertifikayı Geri Yükle</button>
+        <a href="{{ url_for('certificates.view', cert_id=certificate.id) }}" class="btn btn-outline">İptal</a>
+    </form>
+    {% endif %}
+</div>
+
+<div style="margin-top: 2rem; text-align: center;">
+    <a href="{{ url_for('certificates.view', cert_id=certificate.id) }}" class="btn btn-outline btn-sm">← Geri Dön</a>
+</div>
+{% endblock %}

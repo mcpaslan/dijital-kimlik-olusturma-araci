@@ -25,7 +25,8 @@ class User(db.Model):
     common_name = db.Column(db.String(255), nullable=False)
     email = db.Column(db.String(255), nullable=False)
     public_key_pem = db.Column(db.Text, nullable=False)
-    key_size = db.Column(db.Integer, nullable=False, default=2048)
+    key_algorithm = db.Column(db.String(20), nullable=False, default="RSA")  # RSA, Ed25519
+    key_size = db.Column(db.Integer, nullable=False, default=2048)  # RSA için; Ed25519 için 256
     created_at = db.Column(
         db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc)
     )
@@ -51,6 +52,8 @@ class Certificate(db.Model):
     valid_until = db.Column(db.DateTime, nullable=False)
     algorithm = db.Column(db.String(50), nullable=False, default="RSA-PSS-SHA256")
     is_revoked = db.Column(db.Boolean, nullable=False, default=False)
+    revoke_reason = db.Column(db.String(255), nullable=True)  # İptal sebebi
+    revoked_at = db.Column(db.DateTime, nullable=True)  # İptal tarihi
     created_at = db.Column(
         db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc)
     )

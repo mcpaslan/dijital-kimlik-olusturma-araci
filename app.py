@@ -7,16 +7,22 @@ RSA-PSS + SHA-256 ile dijital imza oluşturma, doğrulama ve basit PKI simülasy
 
 import os
 from flask import Flask, render_template
+from sqlalchemy import text
 
 from config import Config
 from models.database import db
 from modules.ca_manager import init_ca, get_ca_cert_info
 
 
-def create_app():
+def create_app(test=False, db_path=None):
     """Flask uygulama fabrikası."""
     app = Flask(__name__)
     app.config.from_object(Config)
+    
+    # Test mode
+    if test:
+        app.config["SQLALCHEMY_DATABASE_URI"] = db_path or "sqlite:///:memory:"
+        app.config["TESTING"] = True
 
     # Gerekli dizinleri oluştur
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
@@ -29,6 +35,29 @@ def create_app():
     with app.app_context():
         # Tabloları oluştur
         db.create_all()
+        
+        # Migration: Eksik column'ları ekle (development mode'da)
+        if not test and os.environ.get("FLASK_ENV") != "production":
+            try:
+                from sqlalchemy import inspect
+                inspector = inspect(db.engine)
+                user_columns = [col["name"] for col in inspector.get_columns("users")]
+                cert_columns = [col["name"] for col in inspector.get_columns("certificates")]
+                
+                # Users tablosuna key_algorithm eklenmiş mi kontrol et
+                if "key_algorithm" not in user_columns:
+                    db.session.execute(text("ALTER TABLE users ADD COLUMN key_algorithm VARCHAR(20) DEFAULT 'RSA'"))
+                    db.session.commit()
+                    print("✅ users tablosuna key_algorithm sütunu eklendi")
+                
+                # Certificates tablosuna revoke alanları eklenmiş mi kontrol et
+                if "revoke_reason" not in cert_columns:
+                    db.session.execute(text("ALTER TABLE certificates ADD COLUMN revoke_reason VARCHAR(255)"))
+                    db.session.execute(text("ALTER TABLE certificates ADD COLUMN revoked_at DATETIME"))
+                    db.session.commit()
+                    print("✅ certificates tablosuna revoke alanları eklendi")
+            except Exception as e:
+                print(f"⚠️ Migration hatası (ignorable): {e}")
 
         # Demo Root CA'yı başlat
         ca_key, ca_cert = init_ca(

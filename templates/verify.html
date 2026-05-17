@@ -88,11 +88,46 @@
     {% for detail in result.details %}
     <div class="detail-item">{{ detail }}</div>
     {% endfor %}
+</div>
+
+<!-- Detaylı Rapor -->
+<div class="card" style="margin-top: 1.5rem;">
+    <div class="card-title">📊 Detaylı Doğrulama Raporu</div>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+        <div class="cert-detail">
+            <div class="label">Algoritma</div>
+            <div class="value">{{ result.algorithm }}</div>
+        </div>
+        <div class="cert-detail">
+            <div class="label">Anahtar Boyutu</div>
+            <div class="value">{{ result.key_size }} bit</div>
+        </div>
+        <div class="cert-detail">
+            <div class="label">İmza Boyutu</div>
+            <div class="value">{{ result.signature_size }} byte</div>
+        </div>
+        <div class="cert-detail">
+            <div class="label">Veri Boyutu</div>
+            <div class="value">{{ result.data_size }} byte</div>
+        </div>
+    </div>
 
     {% if result.hash_hex %}
-    <div class="result-row" style="margin-top: 1rem;">
-        <div class="result-label">SHA-256 Hash (Hex)</div>
-        <pre style="background: rgba(0,0,0,0.3); padding: 8px; border-radius: 6px; font-size: 0.8rem;">{{ result.hash_hex }}</pre>
+    <div class="cert-detail" style="margin-bottom: 1rem;">
+        <div class="label">SHA-256 Hash (Hex)</div>
+        <div class="value" style="word-break: break-all; font-size: 0.85rem; font-family: monospace;">{{ result.hash_hex }}</div>
+    </div>
+    {% endif %}
+
+    {% if result.technical_details %}
+    <div style="background: #f8f9fa; padding: 1rem; border-radius: 6px; margin-top: 1rem;">
+        <div style="font-weight: bold; margin-bottom: 0.75rem;">Teknik Detaylar:</div>
+        {% for key, value in result.technical_details.items() %}
+        <div style="margin: 0.5rem 0; padding-left: 1rem;">
+            <span style="color: #666;">{{ key }}:</span> <code style="background: white; padding: 2px 6px; border-radius: 3px;">{{ value }}</code>
+        </div>
+        {% endfor %}
     </div>
     {% endif %}
 </div>
@@ -101,9 +136,13 @@
 <!-- Sertifika Zinciri Doğrulama -->
 <div class="card" style="margin-top: 1.5rem;">
     <div class="card-title">📜 Sertifika Doğrulama Sonucu</div>
-    {% for detail in result.chain_result.details %}
-    <div class="detail-item">{{ detail }}</div>
-    {% endfor %}
+    <div class="verify-result {{ 'valid' if result.chain_result.is_valid else 'invalid' }}">
+        <div class="status-icon">{{ '✅' if result.chain_result.is_valid else '❌' }}</div>
+        <div class="status-text">{{ 'Sertifika Geçerli' if result.chain_result.is_valid else 'Sertifika Geçersiz' }}</div>
+        {% for detail in result.chain_result.details %}
+        <div class="detail-item">{{ detail }}</div>
+        {% endfor %}
+    </div>
 
     {% if result.cert_info %}
     <div style="margin-top: 1rem;">
@@ -112,12 +151,32 @@
             <div class="value">{{ result.cert_info.subject_cn }}</div>
         </div>
         <div class="cert-detail">
+            <div class="label">E-posta</div>
+            <div class="value">{{ result.cert_info.subject_email }}</div>
+        </div>
+        <div class="cert-detail">
             <div class="label">İmzalayan CA</div>
             <div class="value">{{ result.cert_info.issuer_cn }}</div>
         </div>
         <div class="cert-detail">
-            <div class="label">Geçerlilik</div>
-            <div class="value">{{ result.cert_info.not_valid_before }} — {{ result.cert_info.not_valid_after }}</div>
+            <div class="label">Seri Numarası</div>
+            <div class="value">{{ result.cert_info.serial_number }}</div>
+        </div>
+        <div class="cert-detail">
+            <div class="label">Geçerlilik Başlangıcı</div>
+            <div class="value">{{ result.cert_info.not_valid_before }}</div>
+        </div>
+        <div class="cert-detail">
+            <div class="label">Geçerlilik Bitişi</div>
+            <div class="value">{{ result.cert_info.not_valid_after }}</div>
+        </div>
+        <div class="cert-detail">
+            <div class="label">Public Key Boyutu</div>
+            <div class="value">{{ result.cert_info.public_key_size }} bit</div>
+        </div>
+        <div class="cert-detail">
+            <div class="label">İmza Algoritması</div>
+            <div class="value">{{ result.cert_info.algorithm }}</div>
         </div>
     </div>
     {% endif %}

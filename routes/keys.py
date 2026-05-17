@@ -4,7 +4,7 @@ Keys Routes — Anahtar çifti oluşturma endpoint'leri.
 
 from flask import Blueprint, render_template, request, flash, redirect, url_for, Response
 from models.database import db, User
-from modules.key_manager import generate_rsa_key_pair
+from modules.key_manager import generate_rsa_key_pair, generate_ed25519_key_pair
 
 keys_bp = Blueprint("keys", __name__, url_prefix="/keys")
 
@@ -15,6 +15,7 @@ def generate():
     if request.method == "POST":
         common_name = request.form.get("common_name", "").strip()
         email = request.form.get("email", "").strip()
+        key_algorithm = request.form.get("key_algorithm", "RSA").strip()
         key_size = int(request.form.get("key_size", 2048))
 
         # Doğrulama
@@ -22,19 +23,28 @@ def generate():
             flash("Ad Soyad ve E-posta alanları zorunludur.", "error")
             return render_template("generate_keys.html")
 
-        if key_size not in (2048, 4096):
-            flash("Geçersiz anahtar boyutu.", "error")
+        if key_algorithm not in ("RSA", "Ed25519"):
+            flash("Geçersiz anahtar algoritması.", "error")
+            return render_template("generate_keys.html")
+
+        if key_algorithm == "RSA" and key_size not in (2048, 4096):
+            flash("RSA anahtar boyutu 2048 veya 4096 olmalıdır.", "error")
             return render_template("generate_keys.html")
 
         try:
             # Anahtar çifti oluştur
-            private_key_pem, public_key_pem = generate_rsa_key_pair(key_size)
+            if key_algorithm == "RSA":
+                private_key_pem, public_key_pem = generate_rsa_key_pair(key_size)
+            else:  # Ed25519
+                private_key_pem, public_key_pem = generate_ed25519_key_pair()
+                key_size = 256  # Ed25519 her zaman 256-bit
 
             # Kullanıcıyı veritabanına kaydet (sadece public key)
             user = User(
                 common_name=common_name,
                 email=email,
                 public_key_pem=public_key_pem.decode("utf-8"),
+                key_algorithm=key_algorithm,
                 key_size=key_size,
             )
             db.session.add(user)

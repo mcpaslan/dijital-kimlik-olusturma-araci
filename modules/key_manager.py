@@ -1,12 +1,15 @@
 """
-Key Manager — RSA anahtar çifti oluşturma.
+Key Manager — RSA ve Ed25519 anahtar çifti oluşturma.
 
-Desteklenen anahtar boyutları: 2048 ve 4096 bit.
+Desteklenen algoritmalar:
+  - RSA: 2048 ve 4096 bit
+  - Ed25519: Sabit 256-bit
+
 Private key kullanıcıya PEM dosyası olarak indirilir,
 sunucuda yalnızca public key saklanır.
 """
 
-from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives.asymmetric import rsa, ed25519
 from cryptography.hazmat.primitives import serialization
 
 
@@ -69,3 +72,30 @@ def load_public_key_from_pem(pem_data: bytes):
         RSAPublicKey nesnesi.
     """
     return serialization.load_pem_public_key(pem_data)
+
+
+def generate_ed25519_key_pair() -> tuple:
+    """Ed25519 anahtar çifti oluşturur.
+
+    Ed25519 her zaman 256-bit'tir.
+
+    Returns:
+        (private_key_pem, public_key_pem) — bytes tuple'ı (PEM formatında).
+    """
+    # Ed25519 anahtar çifti oluştur
+    private_key = ed25519.Ed25519PrivateKey.generate()
+
+    # Private key → PEM (şifresiz, kullanıcıya indirilecek)
+    private_key_pem = private_key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption(),
+    )
+
+    # Public key → PEM (sunucuda saklanacak)
+    public_key_pem = private_key.public_key().public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
+    )
+
+    return private_key_pem, public_key_pem

@@ -3,6 +3,8 @@ Verification Routes — İmza doğrulama endpoint'leri.
 """
 
 from flask import Blueprint, render_template, request, flash, current_app
+from cryptography import x509
+from models.database import Certificate
 from modules.verifier import (
     verify_text,
     verify_file,
@@ -35,10 +37,21 @@ def verify():
                 cert_pem = cert_file.read()
                 public_key = load_public_key_from_certificate(cert_pem)
 
+                # Sertifika bilgisini parse et
+                cert_info = parse_certificate(cert_pem)
+                
                 # Sertifika zinciri doğrulama
                 ca_cert = current_app.config["CA_CERT"]
                 chain_result = verify_certificate_chain(cert_pem, ca_cert)
-                cert_info = parse_certificate(cert_pem)
+                
+                # Veritabanında revoke durumunu kontrol et
+                cert = x509.load_pem_x509_certificate(cert_pem)
+                serial_hex = format(cert.serial_number, "X")
+                db_cert = Certificate.query.filter_by(serial_number=serial_hex).first()
+                
+                if db_cert and db_cert.is_revoked:
+                    chain_result["is_valid"] = False
+                    chain_result["details"].insert(0, f"❌ Sertifika iptal edilmiş — Sebep: {db_cert.revoke_reason}")
             else:
                 pubkey_file = request.files.get("pubkey_file")
                 if not pubkey_file or not pubkey_file.filename:

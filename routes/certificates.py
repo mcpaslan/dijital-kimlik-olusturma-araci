@@ -3,6 +3,7 @@ Certificates Routes — Sertifika oluşturma ve görüntüleme endpoint'leri.
 """
 
 from flask import Blueprint, render_template, request, flash, redirect, url_for, Response, current_app
+from datetime import datetime, timezone
 from models.database import db, User, Certificate
 from modules.certificate_manager import create_user_certificate, parse_certificate, verify_certificate_chain
 
@@ -113,3 +114,71 @@ def download(cert_id):
         mimetype="application/x-pem-file",
         headers={"Content-Disposition": f"attachment; filename={filename}"},
     )
+
+
+@certs_bp.route("/revoke/<int:cert_id>", methods=["GET", "POST"])
+def revoke(cert_id):
+    """Sertifikayı iptal eder (revoke)."""
+    certificate = Certificate.query.get_or_404(cert_id)
+
+    if request.method == "POST":
+        revoke_reason = request.form.get("revoke_reason", "").strip()
+
+        if not revoke_reason:
+            flash("İptal sebebi gereklidir.", "error")
+            return render_template(
+                "revoke_certificate.html",
+                certificate=certificate,
+            )
+
+        if len(revoke_reason) > 255:
+            flash("İptal sebebi 255 karakterden kısa olmalıdır.", "error")
+            return render_template(
+                "revoke_certificate.html",
+                certificate=certificate,
+            )
+
+        try:
+            certificate.is_revoked = True
+            certificate.revoke_reason = revoke_reason
+            certificate.revoked_at = datetime.now(timezone.utc)
+            db.session.commit()
+
+            flash(
+                f"Sertifika başarıyla iptal edildi. Sebep: {revoke_reason}",
+                "success",
+            )
+            return redirect(url_for("certificates.view", cert_id=cert_id))
+
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Sertifika iptal hatası: {str(e)}", "error")
+
+    return render_template(
+        "revoke_certificate.html",
+        certificate=certificate,
+    )
+
+
+@certs_bp.route("/restore/<int:cert_id>", methods=["POST"])
+def restore(cert_id):
+    """İptal edilmiş sertifikayı geri yükler."""
+    certificate = Certificate.query.get_or_404(cert_id)
+
+    if not certificate.is_revoked:
+        flash("Bu sertifika zaten aktif durumdadır.", "warning")
+        return redirect(url_for("certificates.view", cert_id=cert_id))
+
+    try:
+        certificate.is_revoked = False
+        certificate.revoke_reason = None
+        certificate.revoked_at = None
+        db.session.commit()
+
+        flash("Sertifika başarıyla geri yüklendi.", "success")
+        return redirect(url_for("certificates.view", cert_id=cert_id))
+
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Sertifika geri yükleme hatası: {str(e)}", "error")
+        return redirect(url_for("certificates.view", cert_id=cert_id))

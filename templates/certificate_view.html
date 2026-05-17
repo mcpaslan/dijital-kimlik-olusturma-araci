@@ -8,12 +8,26 @@
 </div>
 
 <!-- CA Doğrulama Sonucu -->
-<div class="verify-result {{ 'valid' if chain_result.is_valid else 'invalid' }}">
-    <div class="status-icon">{{ '✅' if chain_result.is_valid else '❌' }}</div>
-    <div class="status-text">{{ 'Sertifika Geçerli' if chain_result.is_valid else 'Sertifika Geçersiz' }}</div>
-    {% for detail in chain_result.details %}
-    <div class="detail-item">{{ detail }}</div>
-    {% endfor %}
+<div class="verify-result {{ 'valid' if chain_result.is_valid and not certificate.is_revoked else 'invalid' }}">
+    <div class="status-icon">{{ '✅' if (chain_result.is_valid and not certificate.is_revoked) else '❌' }}</div>
+    <div class="status-text">
+        {% if certificate.is_revoked %}
+            Sertifika İptal Edilmiş
+        {% elif chain_result.is_valid %}
+            Sertifika Geçerli
+        {% else %}
+            Sertifika Geçersiz
+        {% endif %}
+    </div>
+    {% if certificate.is_revoked %}
+        <div class="detail-item">❌ Sertifika iptal edilmiş.</div>
+        <div class="detail-item"><strong>Sebep:</strong> {{ certificate.revoke_reason }}</div>
+        <div class="detail-item"><strong>Tarih:</strong> {{ certificate.revoked_at.strftime('%Y-%m-%d %H:%M:%S UTC') }}</div>
+    {% else %}
+        {% for detail in chain_result.details %}
+        <div class="detail-item">{{ detail }}</div>
+        {% endfor %}
+    {% endif %}
 </div>
 
 <!-- Sertifika Bilgileri -->
@@ -83,7 +97,14 @@
 
 <div class="btn-group" style="margin-top: 1.5rem;">
     <a href="{{ url_for('certificates.download', cert_id=certificate.id) }}" class="btn btn-success">⬇️ Sertifika İndir (.pem)</a>
+    {% if not certificate.is_revoked %}
+    <a href="{{ url_for('certificates.revoke', cert_id=certificate.id) }}" class="btn btn-danger">⚠️ Sertifikayı İptal Et</a>
+    {% else %}
+    <a href="{{ url_for('certificates.revoke', cert_id=certificate.id) }}" class="btn btn-warning">🔄 Sertifikayı Geri Yükle</a>
+    {% endif %}
     <a href="{{ url_for('certificates.list_certs') }}" class="btn btn-outline">📋 Tüm Sertifikalar</a>
+    {% if not certificate.is_revoked %}
     <a href="{{ url_for('signing.sign') }}" class="btn btn-primary">✍️ İmzala →</a>
+    {% endif %}
 </div>
 {% endblock %}
