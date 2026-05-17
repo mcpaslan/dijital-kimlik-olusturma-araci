@@ -26,9 +26,15 @@ def sign():
 
         try:
             private_key_pem = private_key_file.read()
+            if not private_key_pem.strip():
+                flash("Yüklenen private key dosyası boş.", "error")
+                return render_template("sign.html")
             private_key = load_private_key_from_pem(private_key_pem)
+        except ValueError:
+            flash("Geçersiz veya bozuk PEM dosyası yüklendi. Lütfen geçerli bir private key dosyası seçin.", "error")
+            return render_template("sign.html")
         except Exception as e:
-            flash(f"Private key yüklenemedi: {str(e)}", "error")
+            flash("Private key yüklenemedi. Lütfen dosya formatını kontrol edin.", "error")
             return render_template("sign.html")
 
         try:
@@ -51,6 +57,10 @@ def sign():
                     return render_template("sign.html")
 
                 file_data = file.read()
+                if not file_data:
+                    flash("Boş dosya imzalanamaz. Lütfen geçerli bir dosya yükleyin.", "error")
+                    return render_template("sign.html")
+                
                 result = sign_file(file_data, private_key)
                 result["type"] = "file"
                 result["filename"] = file.filename

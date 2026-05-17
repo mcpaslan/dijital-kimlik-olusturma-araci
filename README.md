@@ -11,6 +11,14 @@ Bilgisayar güvenliği dersi kapsamında geliştirilen, **RSA-PSS + SHA-256** ta
 - **PKI Simülasyonu** — Kalıcı Demo Root CA, sertifika zinciri doğrulama
 - **Güvenlik** — Private key sunucuda saklanmaz, kullanıcıya indirilir
 
+## 📸 Ekran Görüntüleri (Screenshots)
+
+Aşağıdaki ekran görüntülerini `static/img/` klasörüne ekleyerek projenizin vitrinini zenginleştirebilirsiniz:
+
+- **Anahtar Üretimi:** `![Anahtar Oluşturma](static/img/screenshot-keys.png)`
+- **İmzalama Ekranı:** `![İmzalama](static/img/screenshot-sign.png)`
+- **Sertifika ve Doğrulama:** `![Doğrulama](static/img/screenshot-verify.png)`
+
 ## 🛠️ Teknolojiler
 
 | Teknoloji | Kullanım |
@@ -108,6 +116,90 @@ docker run -d \
 | **SHA-256** | Kriptografik hash fonksiyonu |
 | **Prehashed** | Çift hash'lemeyi önleyen imzalama yöntemi |
 | **X.509** | Dijital sertifika standardı |
+
+## 🆕 Son Güncellemeler (feature/kritik-eksikler)
+
+Bu branch'te aşağıdaki kritik eksikler tamamlandı:
+
+- ✅ **16 MB dosya boyutu sınırı** — Büyük dosya yüklenince sunucu çökmez, şık hata sayfası gösterir
+- ✅ **Türkçe hata mesajları** — Boş veya hatalı `.pem` dosyası yüklenince anlaşılır uyarı çıkar
+- ✅ **E2E Testler (Playwright)** — Anahtar üretme → İmzalama → Doğrulama akışı otomatik test edilir
+- ✅ **Docker test ortamı** — Tek komutla test ortamı ayağa kalkar
+- ✅ **Kubernetes desteği** — `k8s/` klasöründe Minikube deployment dosyaları hazır
+
+---
+
+## 🧪 Testleri Çalıştırma
+
+### Yöntem 1 — Docker ile (En Kolay, Python kurmana gerek yok)
+
+[Docker Desktop](https://docker.com) kur, sonra:
+
+```powershell
+git checkout feature/kritik-eksikler
+docker compose up --build
+```
+
+Tarayıcıda aç: **http://localhost:5000**
+
+---
+
+### Yöntem 2 — Python ile
+
+```powershell
+# Branch'e geç
+git checkout feature/kritik-eksikler
+
+# Sanal ortam oluştur
+python -m venv venv
+
+# Kütüphaneleri yükle
+.\venv\Scripts\python.exe -m pip install -r requirements.txt
+
+# Uygulamayı başlat
+.\venv\Scripts\python.exe app.py
+```
+
+Tarayıcıda aç: **http://127.0.0.1:5001**
+
+---
+
+### Otomatik E2E Testleri
+
+Uygulama çalışırken **yeni bir terminal** aç:
+
+```powershell
+# Playwright tarayıcısını yükle (ilk seferinde)
+.\venv\Scripts\playwright.exe install chromium
+
+# Testleri çalıştır (tarayıcı görünür açılır, izleyebilirsin)
+.\venv\Scripts\python.exe -m pytest tests/test_e2e.py -v --headed --slowmo 1000
+```
+
+Beklenen sonuç:
+```
+tests/test_e2e.py::test_homepage_loads[chromium] PASSED       [ 50%]
+tests/test_e2e.py::test_e2e_sign_and_verify[chromium] PASSED  [100%]
+2 passed ✅
+```
+
+---
+
+### Manuel Test Senaryoları
+
+**Test için PEM dosyası oluşturmak:**
+```powershell
+.\venv\Scripts\python.exe -c "from cryptography.hazmat.primitives.asymmetric import rsa; from cryptography.hazmat.primitives import serialization; key = rsa.generate_private_key(public_exponent=65537, key_size=2048); open('test_private.pem','wb').write(key.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption())); open('test_public.pem','wb').write(key.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo)); print('Hazir!')"
+```
+
+| Senaryo | Ne yapacaksın? | Beklenen Sonuç |
+|---|---|---|
+| **Normal akış** | `test_private.pem` ile metin imzala → `test_public.pem` ile doğrula | ✅ İmza Geçerli |
+| **Büyük dosya** | 16 MB+ dosya yüklemeyi dene | ✅ Hata sayfası çıkar, çökmez |
+| **Geçersiz imza** | Doğrularken metni 1 harf değiştir | ✅ İmza Geçersiz |
+| **Boş dosya** | Key alanını boş bırak | ✅ Türkçe uyarı çıkar |
+
+---
 
 ## 👥 Ekip
 

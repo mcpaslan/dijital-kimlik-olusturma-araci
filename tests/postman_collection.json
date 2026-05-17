@@ -1,0 +1,111 @@
+{
+	"info": {
+		"_postman_id": "dijital-imza-test-collection",
+		"name": "Dijital İmza ve Kimlik Aracı Testleri",
+		"description": "Flask uygulaması için Newman üzerinden otomatik çalıştırılacak uçtan uca HTML bazlı API testleri.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Ana Sayfa Yükleme Kontrolü",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Durum kodu 200 olmalı\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"pm.test(\"Sayfa içeriğinde Dijital İmza geçmeli\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"Dijital İmza\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "2. Yeni RSA Anahtar Çifti Oluşturma",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Durum kodu 200 olmalı\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"pm.test(\"Başarı mesajı HTML içerisinde bulunmalı\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"Anahtar çifti başarıyla oluşturuldu\");",
+							"});",
+							"pm.test(\"Private Key PEM formatında dönmeli\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"BEGIN PRIVATE KEY\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "common_name",
+							"value": "Postman Otomasyon Testi",
+							"type": "text"
+						},
+						{
+							"key": "email",
+							"value": "newman@test.com",
+							"type": "text"
+						},
+						{
+							"key": "key_algorithm",
+							"value": "RSA",
+							"type": "text"
+						},
+						{
+							"key": "key_size",
+							"value": "2048",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{base_url}}/keys/generate",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"keys",
+						"generate"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://web:5000"
+		}
+	]
+}
