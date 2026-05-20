@@ -571,6 +571,11 @@ function initDragDropZones() {
                 
                 fileSizeSpan.textContent = `(${sizeStr})`;
                 
+                const fileIconSpan = zone.querySelector('.dd-file-icon');
+                if (fileIconSpan) {
+                    fileIconSpan.textContent = acceptIcon;
+                }
+                
                 ddContent.style.display = 'none';
                 ddFileInfo.style.display = 'flex';
             } else {

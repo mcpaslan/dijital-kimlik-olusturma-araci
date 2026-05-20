@@ -21,13 +21,14 @@ def _ensure_directory(path: str) -> None:
     os.makedirs(path, exist_ok=True)
 
 
-def init_ca(ca_folder: str, ca_key_path: str, ca_cert_path: str) -> tuple:
+def init_ca(ca_folder: str, ca_key_path: str, ca_cert_path: str, password: bytes = None) -> tuple:
     """Demo Root CA'yı başlatır.
 
     Args:
         ca_folder: CA dosyalarının saklanacağı dizin yolu.
         ca_key_path: CA private key dosya yolu.
         ca_cert_path: CA sertifika dosya yolu.
+        password: CA özel anahtarını şifreleme parolası (bytes).
 
     Returns:
         (ca_key, ca_cert) tuple'ı.
@@ -35,12 +36,12 @@ def init_ca(ca_folder: str, ca_key_path: str, ca_cert_path: str) -> tuple:
     _ensure_directory(ca_folder)
 
     if os.path.exists(ca_key_path) and os.path.exists(ca_cert_path):
-        return _load_ca(ca_key_path, ca_cert_path)
+        return _load_ca(ca_key_path, ca_cert_path, password)
     else:
-        return _create_ca(ca_key_path, ca_cert_path)
+        return _create_ca(ca_key_path, ca_cert_path, password)
 
 
-def _create_ca(ca_key_path: str, ca_cert_path: str) -> tuple:
+def _create_ca(ca_key_path: str, ca_cert_path: str, password: bytes = None) -> tuple:
     """Yeni Demo Root CA oluşturur (RSA-4096, 10 yıl geçerli).
 
     Returns:
@@ -102,13 +103,20 @@ def _create_ca(ca_key_path: str, ca_cert_path: str) -> tuple:
         )
     )
 
+    # Parola varsa şifrele, yoksa şifresiz kaydet (Zayıflık 2 çözümü)
+    encryption_algorithm = (
+        serialization.BestAvailableEncryption(password)
+        if password
+        else serialization.NoEncryption()
+    )
+
     # Dosyalara kaydet
     with open(ca_key_path, "wb") as f:
         f.write(
             ca_key.private_bytes(
                 encoding=serialization.Encoding.PEM,
                 format=serialization.PrivateFormat.PKCS8,
-                encryption_algorithm=serialization.NoEncryption(),
+                encryption_algorithm=encryption_algorithm,
             )
         )
 
@@ -118,14 +126,22 @@ def _create_ca(ca_key_path: str, ca_cert_path: str) -> tuple:
     return ca_key, ca_cert
 
 
-def _load_ca(ca_key_path: str, ca_cert_path: str) -> tuple:
+def _load_ca(ca_key_path: str, ca_cert_path: str, password: bytes = None) -> tuple:
     """Mevcut CA'yı dosyalardan yükler.
 
     Returns:
         (ca_key, ca_cert) tuple'ı.
     """
     with open(ca_key_path, "rb") as f:
-        ca_key = serialization.load_pem_private_key(f.read(), password=None)
+        key_data = f.read()
+
+    try:
+        ca_key = serialization.load_pem_private_key(key_data, password=password)
+    except TypeError as e:
+        if "private key is not encrypted" in str(e).lower() or "password was given" in str(e).lower():
+            ca_key = serialization.load_pem_private_key(key_data, password=None)
+        else:
+            raise e
 
     with open(ca_cert_path, "rb") as f:
         ca_cert = x509.load_pem_x509_certificate(f.read())

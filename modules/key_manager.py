@@ -13,11 +13,12 @@ from cryptography.hazmat.primitives.asymmetric import rsa, ed25519
 from cryptography.hazmat.primitives import serialization
 
 
-def generate_rsa_key_pair(key_size: int = 2048) -> tuple:
+def generate_rsa_key_pair(key_size: int = 2048, password: bytes = None) -> tuple:
     """RSA anahtar çifti oluşturur.
 
     Args:
         key_size: Anahtar boyutu (2048 veya 4096).
+        password: Özel anahtarı şifrelemek için şifre bytes (opsiyonel).
 
     Returns:
         (private_key_pem, public_key_pem) — bytes tuple'ı (PEM formatında).
@@ -34,11 +35,18 @@ def generate_rsa_key_pair(key_size: int = 2048) -> tuple:
         key_size=key_size,
     )
 
-    # Private key → PEM (şifresiz, kullanıcıya indirilecek)
+    # Parola varsa şifrele, yoksa şifresiz kaydet
+    encryption_algorithm = (
+        serialization.BestAvailableEncryption(password)
+        if password
+        else serialization.NoEncryption()
+    )
+
+    # Private key → PEM (kullanıcıya indirilecek)
     private_key_pem = private_key.private_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PrivateFormat.PKCS8,
-        encryption_algorithm=serialization.NoEncryption(),
+        encryption_algorithm=encryption_algorithm,
     )
 
     # Public key → PEM (sunucuda saklanacak)
@@ -50,16 +58,17 @@ def generate_rsa_key_pair(key_size: int = 2048) -> tuple:
     return private_key_pem, public_key_pem
 
 
-def load_private_key_from_pem(pem_data: bytes):
+def load_private_key_from_pem(pem_data: bytes, password: bytes = None):
     """PEM formatındaki private key'i yükler.
 
     Args:
         pem_data: PEM formatında private key verisi.
+        password: Özel anahtarı çözmek için şifre bytes (opsiyonel).
 
     Returns:
         RSAPrivateKey nesnesi.
     """
-    return serialization.load_pem_private_key(pem_data, password=None)
+    return serialization.load_pem_private_key(pem_data, password=password)
 
 
 def load_public_key_from_pem(pem_data: bytes):

@@ -17,59 +17,46 @@ def sign():
 
     if request.method == "POST":
         sign_type = request.form.get("sign_type", "text")
+        signature_b64 = request.form.get("signature_b64", "").strip()
+        hash_hex = request.form.get("hash_hex", "").strip()
 
-        # Private key PEM dosyasını al
-        private_key_file = request.files.get("private_key_file")
-        if not private_key_file or not private_key_file.filename:
-            flash("Lütfen private key PEM dosyanızı yükleyin.", "error")
+        if not signature_b64 or not hash_hex:
+            flash("İmza veya Hash verisi tarayıcıdan alınamadı.", "error")
             return render_template("sign.html")
 
         try:
-            private_key_pem = private_key_file.read()
-            if not private_key_pem.strip():
-                flash("Yüklenen private key dosyası boş.", "error")
-                return render_template("sign.html")
-            private_key = load_private_key_from_pem(private_key_pem)
-        except ValueError:
-            flash("Geçersiz veya bozuk PEM dosyası yüklendi. Lütfen geçerli bir private key dosyası seçin.", "error")
-            return render_template("sign.html")
-        except Exception as e:
-            flash("Private key yüklenemedi. Lütfen dosya formatını kontrol edin.", "error")
-            return render_template("sign.html")
+            import base64
+            from datetime import datetime, timezone
+            
+            # İmza boyutuna göre algoritmayı otomatik algıla
+            sig_bytes = base64.b64decode(signature_b64)
+            if len(sig_bytes) == 64:
+                algorithm = "Ed25519"
+            else:
+                algorithm = "RSA-PSS + SHA-256 (Prehashed)"
 
-        try:
+            result = {
+                "signature_b64": signature_b64,
+                "hash_hex": hash_hex,
+                "algorithm": algorithm,
+                "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
+            }
+
             if sign_type == "text":
-                # Metin imzalama
                 text = request.form.get("text_input", "").strip()
-                if not text:
-                    flash("İmzalanacak metin giriniz.", "error")
-                    return render_template("sign.html")
-
-                result = sign_text(text, private_key)
                 result["type"] = "text"
                 result["original_data"] = text
                 result["filename"] = "metin_imzasi.txt"
                 result["sig_content"] = create_sig_file_content(result, "metin_imzasi.txt")
 
             elif sign_type == "file":
-                # Dosya imzalama
-                file = request.files.get("file_input")
-                if not file or not file.filename:
-                    flash("İmzalanacak dosyayı seçiniz.", "error")
-                    return render_template("sign.html")
-
-                file_data = file.read()
-                if not file_data:
-                    flash("Boş dosya imzalanamaz. Lütfen geçerli bir dosya yükleyin.", "error")
-                    return render_template("sign.html")
-                
-                result = sign_file(file_data, private_key)
+                filename = request.form.get("filename", "dosya.dat").strip()
                 result["type"] = "file"
-                result["filename"] = file.filename
-                result["sig_content"] = create_sig_file_content(result, file.filename)
+                result["filename"] = filename
+                result["sig_content"] = create_sig_file_content(result, filename)
 
         except Exception as e:
-            flash(f"İmzalama hatası: {str(e)}", "error")
+            flash(f"İmza işleme hatası: {str(e)}", "error")
 
     return render_template("sign.html", result=result)
 

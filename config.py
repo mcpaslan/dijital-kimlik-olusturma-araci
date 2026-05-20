@@ -24,3 +24,7 @@ class Config:
 
     # İzin verilen dosya uzantıları
     ALLOWED_EXTENSIONS = {"pdf", "txt", "doc", "docx", "png", "jpg", "xml", "json"}
+
+    # CA Şifreleme Parolası (Zayıflık 2 Çözümü)
+    CA_PASSWORD = os.environ.get("CA_PASSWORD", "SuperSecureRootCAPassword2026!")
+

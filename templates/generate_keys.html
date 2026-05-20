@@ -16,6 +16,7 @@
 <div class="card">
     <div class="card-title">Yeni Anahtar Çifti</div>
     <form method="POST" action="{{ url_for('keys.generate') }}">
+        <input type="hidden" id="public_key_pem" name="public_key_pem">
         <div class="form-group">
             <label for="common_name">Ad Soyad</label>
             <input type="text" class="form-control" id="common_name" name="common_name" placeholder="Örn: Ahmet Yılmaz" required>
@@ -37,6 +38,50 @@
                 <option value="2048" selected>RSA-2048</option>
                 <option value="4096">RSA-4096 (Yüksek Güvenlik)</option>
             </select>
+        </div>
+        <div class="form-group">
+            <label for="key_password">Özel Anahtar Parolası (Zorunlu)</label>
+            <div style="position: relative;">
+                <input type="password" class="form-control" id="key_password" name="key_password" placeholder="Şifrenizi girin..." required style="padding-right: 48px;">
+                <button type="button" id="toggle_password_btn" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.2rem; padding: 4px; display: flex; align-items: center; justify-content: center; transition: var(--transition-fast);" title="Şifreyi Göster/Gizle">👁️</button>
+            </div>
+            
+            <!-- Şifre Gücü Göstergesi (Premium & Animasyonlu) -->
+            <div class="password-strength-container" style="margin-top: 0.75rem; display: none; animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);">
+                <div class="strength-meter-bar" style="height: 6px; background: rgba(148, 163, 184, 0.1); border-radius: 3px; overflow: hidden; margin-bottom: 0.5rem; position: relative;">
+                    <div id="strength_meter_fill" style="height: 100%; width: 0%; background: var(--danger); transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.4s ease; border-radius: 3px;"></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                    <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 500;">Şifre Gücü:</span>
+                    <strong id="strength_text" style="font-size: 0.78rem; color: var(--danger); text-transform: uppercase; letter-spacing: 0.5px;">ZAYIF</strong>
+                </div>
+                
+                <!-- Şifre Gereksinimleri Listesi -->
+                <ul class="strength-requirements" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.45rem;">
+                    <li id="req_length" style="font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.6rem; transition: color 0.25s ease;">
+                        <span class="req-bullet" style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #cbd5e1; transition: background-color 0.25s ease, box-shadow 0.25s ease;"></span>
+                        <span>En az 8 karakter</span>
+                    </li>
+                    <li id="req_upper" style="font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.6rem; transition: color 0.25s ease;">
+                        <span class="req-bullet" style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #cbd5e1; transition: background-color 0.25s ease, box-shadow 0.25s ease;"></span>
+                        <span>En az bir büyük harf (A-Z)</span>
+                    </li>
+                    <li id="req_lower" style="font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.6rem; transition: color 0.25s ease;">
+                        <span class="req-bullet" style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #cbd5e1; transition: background-color 0.25s ease, box-shadow 0.25s ease;"></span>
+                        <span>En az bir küçük harf (a-z)</span>
+                    </li>
+                    <li id="req_number" style="font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.6rem; transition: color 0.25s ease;">
+                        <span class="req-bullet" style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #cbd5e1; transition: background-color 0.25s ease, box-shadow 0.25s ease;"></span>
+                        <span>En az bir rakam (0-9)</span>
+                    </li>
+                    <li id="req_special" style="font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.6rem; transition: color 0.25s ease;">
+                        <span class="req-bullet" style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #cbd5e1; transition: background-color 0.25s ease, box-shadow 0.25s ease;"></span>
+                        <span>En az bir özel karakter (örn: @, $, !, %, *, ?, &, #, - vb.)</span>
+                    </li>
+                </ul>
+            </div>
+            
+            <small style="color: #94a3b8; display: block; margin-top: 0.5rem;">Bu şifre özel anahtarınızı tarayıcınızda <strong>PBKDF2 + AES-GCM (256-bit)</strong> ile şifrelemek için kullanılır. Sunucuya <strong>asla gönderilmez</strong>.</small>
         </div>
         <button type="submit" class="btn btn-primary">🔑 Anahtar Çifti Oluştur</button>
     </form>
@@ -64,21 +109,21 @@ function updateKeySizeOptions() {
 
 {% else %}
 <!-- Başarılı sonuç -->
-<div class="alert alert-success success-reveal">✅ Anahtar çifti başarıyla oluşturuldu! Private key'inizi hemen indirin.</div>
+<div class="alert alert-success success-reveal">✅ Anahtar çifti başarıyla oluşturuldu! Özel anahtarınız tarayıcınızda güvenli bir şekilde şifrelendi ve cihazınıza indirildi.</div>
 
 <div class="card success-reveal" style="margin-bottom: 1.5rem; animation-delay: 0.1s;">
-    <div class="card-title">⚠️ Private Key — İndirin ve Güvenli Saklayın</div>
-    <div class="result-box">
-        <div class="result-row">
-            <div class="result-label">PRIVATE KEY (PEM)</div>
-            <pre>{{ private_key_pem }}</pre>
+    <div class="card-title">🛡️ Sıfır-Bilgi (Zero-Knowledge) Özel Anahtar Yönetimi</div>
+    <div class="info-box" style="margin: 1rem 0;">
+        <span class="icon">🔒</span>
+        <span>Özel anahtarınız (Private Key) sunucuya gönderilmeden tarayıcınızda <strong>PBKDF2 + AES-GCM (256-bit)</strong> ile şifrelenmiştir. Güvenliğiniz için bu anahtar sunucuda <strong>saklanmaz</strong>.</span>
+    </div>
+    <div style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 12px; padding: 1.25rem; display: flex; align-items: center; gap: 1rem;">
+        <span style="font-size: 2rem;">📥</span>
+        <div>
+            <strong style="color: #10b981; display: block; margin-bottom: 0.25rem;">Anahtarınız İndirildi</strong>
+            <span style="color: #94a3b8; font-size: 0.85rem;">Şifreli özel anahtarınız (<code>.pem</code>) tarayıcınız tarafından doğrudan bilgisayarınıza indirildi. Lütfen bu dosyayı güvenli bir yerde saklayın.</span>
         </div>
     </div>
-    <form method="POST" action="{{ url_for('keys.download_private_key') }}" style="margin-top: 1rem;">
-        <input type="hidden" name="private_key_pem" value="{{ private_key_pem }}">
-        <input type="hidden" name="common_name" value="{{ user.common_name }}">
-        <button type="submit" class="btn btn-success">⬇️ Private Key İndir (.pem)</button>
-    </form>
 </div>
 
 <div class="card success-reveal" style="animation-delay: 0.2s;">
@@ -124,4 +169,174 @@ function updateKeySizeOptions() {
 <div style="margin-top: 2rem; text-align: center;">
     <a href="{{ url_for('keys.list_keys') }}" class="btn btn-outline btn-sm">📋 Kayıtlı Kullanıcıları Görüntüle</a>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/crypto-client.js', v='1.2') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.querySelector('form');
+    const passwordInput = document.getElementById('key_password');
+    const toggleBtn = document.getElementById('toggle_password_btn');
+    const strengthContainer = document.querySelector('.password-strength-container');
+    const meterFill = document.getElementById('strength_meter_fill');
+    const strengthText = document.getElementById('strength_text');
+
+    const reqLength = document.getElementById('req_length');
+    const reqUpper = document.getElementById('req_upper');
+    const reqLower = document.getElementById('req_lower');
+    const reqNumber = document.getElementById('req_number');
+    const reqSpecial = document.getElementById('req_special');
+
+    // Şifre Göster/Gizle
+    if (toggleBtn && passwordInput) {
+        toggleBtn.addEventListener('click', function() {
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleBtn.textContent = '🙈';
+            } else {
+                passwordInput.type = 'password';
+                toggleBtn.textContent = '👁️';
+            }
+        });
+    }
+
+    // Şifre Gücü Hesaplama Fonksiyonu
+    function evaluatePassword(val) {
+        const hasLength = val.length >= 8;
+        const hasUpper = /[A-Z]/.test(val);
+        const hasLower = /[a-z]/.test(val);
+        const hasNumber = /[0-9]/.test(val);
+        const hasSpecial = /[^A-Za-z0-9]/.test(val);
+
+        return { hasLength, hasUpper, hasLower, hasNumber, hasSpecial };
+    }
+
+    function updateRequirement(el, isMet) {
+        const bullet = el.querySelector('.req-bullet');
+        if (isMet) {
+            el.style.color = 'var(--success)';
+            bullet.style.backgroundColor = 'var(--success)';
+            bullet.style.boxShadow = '0 0 8px var(--success)';
+        } else {
+            el.style.color = 'var(--text-muted)';
+            bullet.style.backgroundColor = '#cbd5e1';
+            bullet.style.boxShadow = 'none';
+        }
+    }
+
+    // Gerçek Zamanlı Giriş Dinleyici
+    if (passwordInput) {
+        passwordInput.addEventListener('input', function() {
+            const val = passwordInput.value;
+            if (!val) {
+                strengthContainer.style.display = 'none';
+                return;
+            }
+
+            strengthContainer.style.display = 'block';
+
+            const reqs = evaluatePassword(val);
+
+            updateRequirement(reqLength, reqs.hasLength);
+            updateRequirement(reqUpper, reqs.hasUpper);
+            updateRequirement(reqLower, reqs.hasLower);
+            updateRequirement(reqNumber, reqs.hasNumber);
+            updateRequirement(reqSpecial, reqs.hasSpecial);
+
+            let score = 0;
+            if (reqs.hasLength) score++;
+            if (reqs.hasUpper) score++;
+            if (reqs.hasLower) score++;
+            if (reqs.hasNumber) score++;
+            if (reqs.hasSpecial) score++;
+
+            const pct = (score / 5) * 100;
+            meterFill.style.width = pct + '%';
+
+            if (score <= 2) {
+                meterFill.style.backgroundColor = 'var(--danger)';
+                strengthText.textContent = 'ZAYIF';
+                strengthText.style.color = 'var(--danger)';
+            } else if (score <= 4) {
+                meterFill.style.backgroundColor = 'var(--warning)';
+                strengthText.textContent = 'ORTA';
+                strengthText.style.color = 'var(--warning)';
+            } else {
+                meterFill.style.backgroundColor = 'var(--success)';
+                strengthText.textContent = 'GÜÇLÜ';
+                strengthText.style.color = 'var(--success)';
+            }
+        });
+    }
+
+    if (form) {
+        form.addEventListener('submit', async function(e) {
+            if (form.dataset.cryptoDone === 'true') {
+                return; // İkinci tetiklemede normal submit'e izin ver
+            }
+            e.preventDefault();
+            e.stopPropagation();
+
+            const commonNameInput = document.getElementById('common_name');
+            const emailInput = document.getElementById('email');
+            const algorithmSelect = document.getElementById('key_algorithm');
+            const keySizeSelect = document.getElementById('key_size');
+
+            if (!commonNameInput || !emailInput || !passwordInput) return;
+
+            const commonName = commonNameInput.value.trim();
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
+            const algorithm = algorithmSelect.value;
+            const keySize = parseInt(keySizeSelect.value);
+
+            if (!commonName || !email) {
+                alert("Ad Soyad ve E-posta alanları zorunludur.");
+                return;
+            }
+
+            // Güçlü Parola Kontrolü (Büyük, Küçük, Rakam, Özel Karakter ve Uzunluk)
+            const reqs = evaluatePassword(password);
+            if (!reqs.hasLength || !reqs.hasUpper || !reqs.hasLower || !reqs.hasNumber || !reqs.hasSpecial) {
+                alert("Özel anahtarınızın güvenliği için lütfen tüm gereksinimleri karşılayan güçlü bir parola belirleyin.");
+                return;
+            }
+
+            try {
+                // Anahtar çiftini tarayıcıda üret
+                const keys = await CryptoClient.generateKeyPair(algorithm, keySize, password);
+
+                // Public key'i gizli input alanına doldur
+                document.getElementById('public_key_pem').value = keys.publicKeyPem;
+
+                // Private key'i tarayıcıdan doğrudan indir (Zero-Knowledge)
+                const blob = new Blob([keys.privateKeyPem], { type: 'application/x-pem-file' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${commonName.replace(/ /g, '_').toLowerCase()}_private_key.pem`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                // Crypto işlemi tamamlandı olarak işaretle
+                form.dataset.cryptoDone = 'true';
+
+                // main.js preloader'ının tetiklenmesi için submit butonunu klikleyelim
+                const submitBtn = form.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.click();
+                } else {
+                    form.submit();
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Anahtar üretilirken bir kripto hatası oluştu: " + error.message);
+            }
+        });
+    }
+});
+</script>
 {% endblock %}

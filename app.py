@@ -59,11 +59,13 @@ def create_app(test=False, db_path=None):
             except Exception as e:
                 print(f"⚠️ Migration hatası (ignorable): {e}")
 
-        # Demo Root CA'yı başlat
+        # Demo Root CA'yı başlat (Zayıflık 2 çözümü)
+        ca_password = app.config.get("CA_PASSWORD", "").encode("utf-8") if app.config.get("CA_PASSWORD") else None
         ca_key, ca_cert = init_ca(
             ca_folder=app.config["CA_FOLDER"],
             ca_key_path=app.config["CA_KEY_PATH"],
             ca_cert_path=app.config["CA_CERT_PATH"],
+            password=ca_password,
         )
         app.config["CA_KEY"] = ca_key
         app.config["CA_CERT"] = ca_cert

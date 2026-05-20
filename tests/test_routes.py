@@ -62,11 +62,12 @@ class TestRoutes(unittest.TestCase):
                 "email": "test@example.com",
                 "key_algorithm": "RSA",
                 "key_size": "2048",
+                "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAv16H4\n-----END PUBLIC KEY-----",
             },
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b"BEGIN PRIVATE KEY", response.data)
+        self.assertNotIn(b"BEGIN PRIVATE KEY", response.data)
         self.assertIn(b"BEGIN PUBLIC KEY", response.data)
 
         # Veritabaninda user olusturulmus mu kontrol et
@@ -85,11 +86,13 @@ class TestRoutes(unittest.TestCase):
                 "email": "ed@example.com",
                 "key_algorithm": "Ed25519",
                 "key_size": "256",
+                "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAdV2\n-----END PUBLIC KEY-----",
             },
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b"BEGIN PRIVATE KEY", response.data)
+        self.assertNotIn(b"BEGIN PRIVATE KEY", response.data)
+        self.assertIn(b"BEGIN PUBLIC KEY", response.data)
 
         user = User.query.filter_by(email="ed@example.com").first()
         self.assertIsNotNone(user)
@@ -104,6 +107,7 @@ class TestRoutes(unittest.TestCase):
                 "email": "list@example.com",
                 "key_algorithm": "RSA",
                 "key_size": "2048",
+                "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAv16H4\n-----END PUBLIC KEY-----",
             },
         )
 

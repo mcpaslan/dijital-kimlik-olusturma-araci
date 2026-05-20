@@ -31,32 +31,30 @@ def generate():
             flash("RSA anahtar boyutu 2048 veya 4096 olmalıdır.", "error")
             return render_template("generate_keys.html")
 
-        try:
-            # Anahtar çifti oluştur
-            if key_algorithm == "RSA":
-                private_key_pem, public_key_pem = generate_rsa_key_pair(key_size)
-            else:  # Ed25519
-                private_key_pem, public_key_pem = generate_ed25519_key_pair()
-                key_size = 256  # Ed25519 her zaman 256-bit
+        # Client-side'dan gelen Public Key'i al
+        public_key_pem = request.form.get("public_key_pem", "").strip()
 
+        if not public_key_pem:
+            flash("Public Key bilgisi tarayıcıdan alınamadı.", "error")
+            return render_template("generate_keys.html")
+
+        try:
             # Kullanıcıyı veritabanına kaydet (sadece public key)
             user = User(
                 common_name=common_name,
                 email=email,
-                public_key_pem=public_key_pem.decode("utf-8"),
+                public_key_pem=public_key_pem,
                 key_algorithm=key_algorithm,
                 key_size=key_size,
             )
             db.session.add(user)
             db.session.commit()
 
-            # Private key'i session'da geçici tut (indirme için)
             return render_template(
                 "generate_keys.html",
                 success=True,
                 user=user,
-                private_key_pem=private_key_pem.decode("utf-8"),
-                public_key_pem=public_key_pem.decode("utf-8"),
+                public_key_pem=public_key_pem,
             )
 
         except Exception as e:

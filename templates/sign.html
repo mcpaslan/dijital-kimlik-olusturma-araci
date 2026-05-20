@@ -28,6 +28,8 @@
         <form method="POST" action="{{ url_for('signing.sign') }}" enctype="multipart/form-data">
             <input type="hidden" name="sign_type" value="text">
             <input type="hidden" name="active_tab" value="text">
+            <input type="hidden" name="signature_b64" id="signature_b64_text">
+            <input type="hidden" name="hash_hex" id="hash_hex_text">
             <div class="form-group">
                 <label for="text_input">İmzalanacak Metin</label>
                 <textarea class="form-control" id="text_input" name="text_input"
@@ -43,8 +45,11 @@
             </div>
             <div class="form-group">
                 <label for="private_key_file_text">Private Key Dosyası (.pem)</label>
-                <input type="file" class="form-control-file" id="private_key_file_text"
-                    name="private_key_file" accept=".pem" required>
+                <input type="file" class="form-control-file" id="private_key_file_text" accept=".pem" required>
+            </div>
+            <div class="form-group">
+                <label for="private_key_password_text">Özel Anahtar Parolası</label>
+                <input type="password" class="form-control" id="private_key_password_text" placeholder="Anahtar oluşturulurken belirlediğiniz şifreyi girin" required>
             </div>
             <button type="submit" class="btn btn-primary">✍️ Metni İmzala</button>
         </form>
@@ -55,14 +60,20 @@
         <form method="POST" action="{{ url_for('signing.sign') }}" enctype="multipart/form-data">
             <input type="hidden" name="sign_type" value="file">
             <input type="hidden" name="active_tab" value="file">
+            <input type="hidden" name="signature_b64" id="signature_b64_file">
+            <input type="hidden" name="hash_hex" id="hash_hex_file">
+            <input type="hidden" name="filename" id="filename_file">
             <div class="form-group">
                 <label for="file_input">İmzalanacak Dosya</label>
-                <input type="file" class="form-control-file" id="file_input" name="file_input" required>
+                <input type="file" class="form-control-file" id="file_input" required>
             </div>
             <div class="form-group">
                 <label for="private_key_file_file">Private Key Dosyası (.pem)</label>
-                <input type="file" class="form-control-file" id="private_key_file_file"
-                    name="private_key_file" accept=".pem" required>
+                <input type="file" class="form-control-file" id="private_key_file_file" accept=".pem" required>
+            </div>
+            <div class="form-group">
+                <label for="private_key_password_file">Özel Anahtar Parolası</label>
+                <input type="password" class="form-control" id="private_key_password_file" placeholder="Anahtar oluşturulurken belirlediğiniz şifreyi girin" required>
             </div>
             <button type="submit" class="btn btn-primary">✍️ Dosyayı İmzala</button>
         </form>
@@ -107,6 +118,7 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/crypto-client.js', v='1.2') }}"></script>
 <script>
 // POST sonrası aktif sekmeyi koru
 const activeTab = "{{ request.form.get('active_tab', 'text') if request.method == 'POST' else 'text' }}";
@@ -120,7 +132,151 @@ function switchSignTab(type) {
 
 document.addEventListener('DOMContentLoaded', function () {
     switchSignTab(activeTab);
+
+    // Form Interceptors
+    const textForm = document.querySelector('#sign_text_form form');
+    const fileForm = document.querySelector('#sign_file_form form');
+
+    if (textForm) {
+        textForm.addEventListener('submit', async function(e) {
+            if (textForm.dataset.cryptoDone === 'true') {
+                return; // İkinci tetiklemede animasyonlu gönderime izin ver
+            }
+            e.preventDefault();
+            e.stopPropagation();
+
+            const textInput = document.getElementById('text_input');
+            const keyFileInput = document.getElementById('private_key_file_text');
+            const passwordInput = document.getElementById('private_key_password_text');
+
+            if (!textInput.value.trim()) {
+                alert("İmzalanacak metin boş olamaz.");
+                return;
+            }
+            if (!keyFileInput.files || keyFileInput.files.length === 0) {
+                alert("Lütfen Private Key dosyanızı (.pem) seçin.");
+                return;
+            }
+            if (!passwordInput.value) {
+                alert("Lütfen özel anahtar parolanızı girin.");
+                return;
+            }
+
+            try {
+                // 1. Private key oku ve şifresini çöz
+                const keyPem = await readFileAsText(keyFileInput.files[0]);
+                const password = passwordInput.value;
+                const privateKey = await CryptoClient.decryptPrivateKey(keyPem, password);
+
+                // 2. Metin verisini array buffer'a çevir
+                const encoder = new TextEncoder();
+                const textBuffer = encoder.encode(textInput.value);
+
+                // 3. Tarayıcıda SHA-256 hash hesapla
+                const hashHex = await CryptoClient.computeSha256(textBuffer);
+
+                // 4. Tarayıcıda imzala
+                const signatureB64 = await CryptoClient.signData(privateKey, textBuffer);
+
+                // 5. Gizli alanları güncelle
+                document.getElementById('signature_b64_text').value = signatureB64;
+                document.getElementById('hash_hex_text').value = hashHex;
+
+                // Crypto işlemi tamamlandı olarak işaretle ve submit butonunu klikle
+                textForm.dataset.cryptoDone = 'true';
+                const submitBtn = textForm.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.click();
+                } else {
+                    textForm.submit();
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Metin imzalanamadı. Lütfen parolanın doğru olduğundan ve geçerli bir özel anahtar dosyası seçtiğinizden emin olun.\nHata Detayı: " + err.message);
+            }
+        });
+    }
+
+    if (fileForm) {
+        fileForm.addEventListener('submit', async function(e) {
+            if (fileForm.dataset.cryptoDone === 'true') {
+                return; // İkinci tetiklemede animasyonlu gönderime izin ver
+            }
+            e.preventDefault();
+            e.stopPropagation();
+
+            const fileInput = document.getElementById('file_input');
+            const keyFileInput = document.getElementById('private_key_file_file');
+            const passwordInput = document.getElementById('private_key_password_file');
+
+            if (!fileInput.files || fileInput.files.length === 0) {
+                alert("Lütfen imzalanacak dosyayı seçin.");
+                return;
+            }
+            if (!keyFileInput.files || keyFileInput.files.length === 0) {
+                alert("Lütfen Private Key dosyanızı (.pem) seçin.");
+                return;
+            }
+            if (!passwordInput.value) {
+                alert("Lütfen özel anahtar parolanızı girin.");
+                return;
+            }
+
+            try {
+                // 1. Private key oku ve şifresini çöz
+                const keyPem = await readFileAsText(keyFileInput.files[0]);
+                const password = passwordInput.value;
+                const privateKey = await CryptoClient.decryptPrivateKey(keyPem, password);
+
+                // 2. Dosya verisini ArrayBuffer olarak oku
+                const file = fileInput.files[0];
+                const fileBuffer = await readFileAsArrayBuffer(file);
+
+                // 3. Tarayıcıda SHA-256 hash hesapla
+                const hashHex = await CryptoClient.computeSha256(fileBuffer);
+
+                // 4. Tarayıcıda imzala
+                const signatureB64 = await CryptoClient.signData(privateKey, fileBuffer);
+
+                // 5. Gizli alanları güncelle
+                document.getElementById('signature_b64_file').value = signatureB64;
+                document.getElementById('hash_hex_file').value = hashHex;
+                document.getElementById('filename_file').value = file.name;
+
+                // Crypto işlemi tamamlandı olarak işaretle ve submit butonunu klikle
+                fileForm.dataset.cryptoDone = 'true';
+                const submitBtn = fileForm.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.click();
+                } else {
+                    fileForm.submit();
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Dosya imzalanamadı. Lütfen parolanın doğru olduğundan ve geçerli bir özel anahtar dosyası seçtiğinizden emin olun.\nHata Detayı: " + err.message);
+            }
+        });
+    }
 });
+
+// Yardımcı dosya okuma fonksiyonları
+function readFileAsText(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsText(file);
+    });
+}
+
+function readFileAsArrayBuffer(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsArrayBuffer(file);
+    });
+}
 
 function copySignature() {
     const sigEl = document.getElementById('sig-b64-output');
