@@ -1,9 +1,11 @@
 """Certificate Manager testleri."""
 
 import unittest
+import tempfile
+import os
 from datetime import datetime, timezone
 from modules.key_manager import generate_rsa_key_pair, generate_ed25519_key_pair, load_private_key_from_pem, load_public_key_from_pem
-from modules.ca_manager import initialize_root_ca
+from modules.ca_manager import init_ca
 from modules.certificate_manager import create_user_certificate, parse_certificate, verify_certificate_chain
 
 
@@ -13,8 +15,17 @@ class TestCertificateManager(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Test öncesi setup."""
-        # CA oluştur
-        cls.ca_key, cls.ca_cert = initialize_root_ca()
+        # Gecici CA dizini olustur
+        cls.tmp_dir = tempfile.mkdtemp()
+        ca_key_path = os.path.join(cls.tmp_dir, "ca_key.pem")
+        ca_cert_path = os.path.join(cls.tmp_dir, "ca_cert.pem")
+        
+        # CA olustur (init_ca kullan)
+        cls.ca_key, cls.ca_cert = init_ca(
+            ca_folder=cls.tmp_dir,
+            ca_key_path=ca_key_path,
+            ca_cert_path=ca_cert_path,
+        )
         
         # User RSA anahtar
         cls.user_rsa_private_pem, cls.user_rsa_public_pem = generate_rsa_key_pair(2048)
