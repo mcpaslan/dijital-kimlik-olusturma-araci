@@ -27,13 +27,17 @@
     <div class="tab-content active" id="sign_text_form">
         <form method="POST" action="{{ url_for('signing.sign') }}" enctype="multipart/form-data">
             <input type="hidden" name="sign_type" value="text">
+            <input type="hidden" name="active_tab" value="text">
             <div class="form-group">
                 <label for="text_input">İmzalanacak Metin</label>
-                <textarea class="form-control" id="text_input" name="text_input" placeholder="İmzalanacak metni buraya yazın..." required></textarea>
+                <textarea class="form-control" id="text_input" name="text_input"
+                    placeholder="İmzalanacak metni buraya yazın..."
+                    required>{% if result and result.type == 'text' %}{{ result.original_data }}{% endif %}</textarea>
             </div>
             <div class="form-group">
                 <label for="private_key_file_text">Private Key Dosyası (.pem)</label>
-                <input type="file" class="form-control-file" id="private_key_file_text" name="private_key_file" accept=".pem" required>
+                <input type="file" class="form-control-file" id="private_key_file_text"
+                    name="private_key_file" accept=".pem" required>
             </div>
             <button type="submit" class="btn btn-primary">✍️ Metni İmzala</button>
         </form>
@@ -43,13 +47,15 @@
     <div class="tab-content" id="sign_file_form">
         <form method="POST" action="{{ url_for('signing.sign') }}" enctype="multipart/form-data">
             <input type="hidden" name="sign_type" value="file">
+            <input type="hidden" name="active_tab" value="file">
             <div class="form-group">
                 <label for="file_input">İmzalanacak Dosya</label>
                 <input type="file" class="form-control-file" id="file_input" name="file_input" required>
             </div>
             <div class="form-group">
                 <label for="private_key_file_file">Private Key Dosyası (.pem)</label>
-                <input type="file" class="form-control-file" id="private_key_file_file" name="private_key_file" accept=".pem" required>
+                <input type="file" class="form-control-file" id="private_key_file_file"
+                    name="private_key_file" accept=".pem" required>
             </div>
             <button type="submit" class="btn btn-primary">✍️ Dosyayı İmzala</button>
         </form>
@@ -71,7 +77,7 @@
         </div>
         <div class="result-row">
             <div class="result-label">İmza (Base64)</div>
-            <pre>{{ result.signature_b64 }}</pre>
+            <pre id="sig-b64-output">{{ result.signature_b64 }}</pre>
         </div>
         <div class="result-row">
             <div class="result-label">Zaman Damgası</div>
@@ -79,22 +85,47 @@
         </div>
     </div>
 
-    {% if result.type == 'file' %}
-    <form method="POST" action="{{ url_for('signing.download_sig') }}" style="margin-top: 1rem;">
-        <input type="hidden" name="sig_content" value="{{ result.sig_content }}">
-        <input type="hidden" name="filename" value="{{ result.filename }}">
-        <button type="submit" class="btn btn-success">⬇️ İmza Dosyası İndir (.sig)</button>
-    </form>
-    {% endif %}
+    <div class="btn-group" style="margin-top: 1rem;">
+        {% if result.type == 'text' %}
+        <button type="button" class="btn btn-outline" onclick="copySignature()">📋 İmzayı Kopyala</button>
+        {% endif %}
+        {% if result.type == 'file' %}
+        <form method="POST" action="{{ url_for('signing.download_sig') }}">
+            <input type="hidden" name="sig_content" value="{{ result.sig_content }}">
+            <input type="hidden" name="filename" value="{{ result.filename }}">
+            <button type="submit" class="btn btn-success">⬇️ İmza Dosyası İndir (.sig)</button>
+        </form>
+        {% endif %}
+    </div>
 </div>
 {% endif %}
 {% endblock %}
 
 {% block scripts %}
 <script>
+// POST sonrası aktif sekmeyi koru
+const activeTab = "{{ request.form.get('active_tab', 'text') if request.method == 'POST' else 'text' }}";
+
 function switchSignTab(type) {
     document.getElementById('sign_text_form').classList.toggle('active', type === 'text');
     document.getElementById('sign_file_form').classList.toggle('active', type === 'file');
+    document.getElementById('tab_text').checked = (type === 'text');
+    document.getElementById('tab_file').checked = (type === 'file');
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    switchSignTab(activeTab);
+});
+
+function copySignature() {
+    const sigEl = document.getElementById('sig-b64-output');
+    if (sigEl) {
+        navigator.clipboard.writeText(sigEl.textContent.trim()).then(() => {
+            const btn = document.querySelector('[onclick="copySignature()"]');
+            btn.textContent = '✅ Kopyalandı!';
+            setTimeout(() => btn.textContent = '📋 İmzayı Kopyala', 2000);
+        });
+    }
 }
 </script>
 {% endblock %}

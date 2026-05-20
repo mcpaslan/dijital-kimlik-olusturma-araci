@@ -34,3 +34,7 @@ storage/signatures/
 # OS
 .DS_Store
 Thumbs.db
+
+test_private.pem
+test_public.pem
+*.pem

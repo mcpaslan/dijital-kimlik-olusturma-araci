@@ -16,6 +16,10 @@
     <div class="card-title">Doğrulama</div>
 
     <form method="POST" action="{{ url_for('verification.verify') }}" enctype="multipart/form-data">
+        <!-- Aktif sekme bilgisini POST ile taşı -->
+        <input type="hidden" id="active_verify_tab_input" name="active_verify_tab" value="{{ request.form.get('active_verify_tab', 'text') if request.method == 'POST' else 'text' }}">
+        <input type="hidden" id="active_key_source_input" name="active_key_source" value="{{ request.form.get('active_key_source', 'public_key') if request.method == 'POST' else 'public_key' }}">
+
         <!-- Doğrulama Türü -->
         <div class="tab-switch">
             <input type="radio" name="verify_type" id="vtab_text" value="text" checked>
@@ -28,7 +32,8 @@
         <div class="tab-content active" id="verify_text_input">
             <div class="form-group">
                 <label for="text_input">Orijinal Metin</label>
-                <textarea class="form-control" id="text_input" name="text_input" placeholder="Doğrulanacak orijinal metni girin..."></textarea>
+                <textarea class="form-control" id="text_input" name="text_input"
+                    placeholder="Doğrulanacak orijinal metni girin...">{{ request.form.get('text_input', '') if request.method == 'POST' }}</textarea>
             </div>
         </div>
 
@@ -43,7 +48,9 @@
         <!-- İmza Bilgisi -->
         <div class="form-group">
             <label for="signature_input">İmza Değeri (Base64) veya .sig Dosyası</label>
-            <textarea class="form-control" id="signature_input" name="signature_input" placeholder="Base64 formatında imza değerini yapıştırın..." style="min-height: 80px;"></textarea>
+            <textarea class="form-control" id="signature_input" name="signature_input"
+                placeholder="Base64 formatında imza değerini yapıştırın..."
+                style="min-height: 80px;">{{ request.form.get('signature_input', '') if request.method == 'POST' }}</textarea>
         </div>
         <div class="form-group">
             <label for="sig_file">veya .sig Dosyası Yükleyin</label>
@@ -93,7 +100,7 @@
 <!-- Detaylı Rapor -->
 <div class="card" style="margin-top: 1.5rem;">
     <div class="card-title">📊 Detaylı Doğrulama Raporu</div>
-    
+
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
         <div class="cert-detail">
             <div class="label">Algoritma</div>
@@ -121,11 +128,12 @@
     {% endif %}
 
     {% if result.technical_details %}
-    <div style="background: #f8f9fa; padding: 1rem; border-radius: 6px; margin-top: 1rem;">
-        <div style="font-weight: bold; margin-bottom: 0.75rem;">Teknik Detaylar:</div>
+    <div style="background: rgba(51, 65, 85, 0.5); padding: 1rem; border-radius: 6px; margin-top: 1rem; border: 1px solid var(--border-light);">
+        <div style="font-weight: bold; margin-bottom: 0.75rem; color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">Teknik Detaylar:</div>
         {% for key, value in result.technical_details.items() %}
         <div style="margin: 0.5rem 0; padding-left: 1rem;">
-            <span style="color: #666;">{{ key }}:</span> <code style="background: white; padding: 2px 6px; border-radius: 3px;">{{ value }}</code>
+            <span style="color: var(--text-muted);">{{ key }}:</span>
+            <code style="background: var(--bg); padding: 2px 6px; border-radius: 3px; font-family: var(--font-mono); color: var(--accent);">{{ value }}</code>
         </div>
         {% endfor %}
     </div>
@@ -187,14 +195,29 @@
 
 {% block scripts %}
 <script>
+// POST sonrası aktif sekmeleri koru
+const activeVerifyTab = "{{ request.form.get('active_verify_tab', 'text') if request.method == 'POST' else 'text' }}";
+const activeKeySource = "{{ request.form.get('active_key_source', 'public_key') if request.method == 'POST' else 'public_key' }}";
+
 function switchVerifyTab(type) {
     document.getElementById('verify_text_input').classList.toggle('active', type === 'text');
     document.getElementById('verify_file_input').classList.toggle('active', type === 'file');
+    document.getElementById('vtab_text').checked = (type === 'text');
+    document.getElementById('vtab_file').checked = (type === 'file');
+    document.getElementById('active_verify_tab_input').value = type;
 }
 
 function switchKeySource(source) {
     document.getElementById('pubkey_input').style.display = source === 'public_key' ? 'block' : 'none';
     document.getElementById('cert_input').style.display = source === 'certificate' ? 'block' : 'none';
+    document.getElementById('ks_pubkey').checked = (source === 'public_key');
+    document.getElementById('ks_cert').checked = (source === 'certificate');
+    document.getElementById('active_key_source_input').value = source;
 }
+
+document.addEventListener('DOMContentLoaded', function () {
+    switchVerifyTab(activeVerifyTab);
+    switchKeySource(activeKeySource);
+});
 </script>
 {% endblock %}

@@ -107,6 +107,11 @@ function updateKeySizeOptions() {
             <div class="value">{{ user.key_algorithm }}-{{ user.key_size }}</div>
         </div>
     </div>
+    <form method="POST" action="{{ url_for('keys.download_public_key') }}" style="margin-top: 1rem;">
+        <input type="hidden" name="public_key_pem" value="{{ public_key_pem }}">
+        <input type="hidden" name="common_name" value="{{ user.common_name }}">
+        <button type="submit" class="btn btn-outline">⬇️ Public Key İndir (.pem)</button>
+    </form>
 </div>
 
 <div class="btn-group" style="margin-top: 1.5rem;">

@@ -85,6 +85,25 @@ def download_private_key():
     )
 
 
+@keys_bp.route("/download-public-key", methods=["POST"])
+def download_public_key():
+    """Public key'i PEM dosyası olarak indirir."""
+    public_key_pem = request.form.get("public_key_pem", "")
+    common_name = request.form.get("common_name", "kullanici")
+
+    if not public_key_pem:
+        flash("İndirilecek public key bulunamadı.", "error")
+        return redirect(url_for("keys.generate"))
+
+    filename = f"{common_name.replace(' ', '_').lower()}_public_key.pem"
+
+    return Response(
+        public_key_pem,
+        mimetype="application/x-pem-file",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
+
+
 @keys_bp.route("/list")
 def list_keys():
     """Kayıtlı kullanıcıları ve public key'lerini listeler."""

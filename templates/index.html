@@ -2,19 +2,49 @@
 {% block title %}Dijital İmza Aracı — Ana Sayfa{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <h1>Dijital İmza Oluşturma ve Doğrulama Aracı</h1>
-    <p>RSA-PSS + SHA-256 tabanlı dijital imza sistemi ile basit PKI simülasyonu</p>
+<!-- Hero Section -->
+<div class="hero-section">
+    <div class="hero-badge">🔐 PKI Simülasyonu</div>
+    <h1 class="hero-title">Dijital İmza Oluşturma<br>ve Doğrulama Aracı</h1>
+    <p class="hero-subtitle">RSA-PSS + SHA-256 ve Ed25519 tabanlı dijital imza sistemi.<br>Bilgisayar Güvenliği Dersi — Gerçek kriptografi, basit arayüz.</p>
+    <div class="hero-actions">
+        <a href="{{ url_for('keys.generate') }}" class="btn btn-primary btn-lg">🚀 Hemen Başla</a>
+        <a href="{{ url_for('keys.list_keys') }}" class="btn btn-outline btn-lg">📋 Kayıtlı Kullanıcılar</a>
+    </div>
+</div>
+
+<!-- Özellikler -->
+<div class="features-grid">
+    <div class="feature-card">
+        <div class="feature-icon">🔑</div>
+        <div class="feature-title">RSA & Ed25519</div>
+        <div class="feature-desc">RSA-2048/4096 ve modern Ed25519 anahtar algoritmaları desteklenir.</div>
+    </div>
+    <div class="feature-card">
+        <div class="feature-icon">📜</div>
+        <div class="feature-title">X.509 Sertifika</div>
+        <div class="feature-desc">Demo Root CA tarafından imzalı gerçek X.509 sertifikaları üretin.</div>
+    </div>
+    <div class="feature-card">
+        <div class="feature-icon">✍️</div>
+        <div class="feature-title">Metin & Dosya İmzala</div>
+        <div class="feature-desc">Her türlü metin veya dosyayı private key ile imzalayın.</div>
+    </div>
+    <div class="feature-card">
+        <div class="feature-icon">🛡️</div>
+        <div class="feature-title">Sertifika İptali</div>
+        <div class="feature-desc">Tehlikeye giren sertifikaları iptal edin ve durumu takip edin.</div>
+    </div>
 </div>
 
 <!-- Nasıl Çalışır -->
-<h2 style="font-size: 1.2rem; margin-bottom: 1rem;">📋 Nasıl Çalışır?</h2>
+<h2 class="section-title">📋 Nasıl Çalışır?</h2>
 <div class="steps">
     <a href="{{ url_for('keys.generate') }}" class="step" style="text-decoration:none; color:inherit;">
         <div class="step-number">1</div>
         <div class="step-icon">🔑</div>
         <h3>Anahtar Oluştur</h3>
-        <p>RSA-2048/4096 anahtar çifti üretin. Private key'inizi indirin.</p>
+        <p>RSA-2048/4096 veya Ed25519 anahtar çifti üretin. Private key'inizi indirin.</p>
     </a>
     <a href="{{ url_for('certificates.create') }}" class="step" style="text-decoration:none; color:inherit;">
         <div class="step-number">2</div>
@@ -36,4 +66,18 @@
     </a>
 </div>
 
+<!-- Teknik Bilgi -->
+<div class="tech-info-box">
+    <div class="tech-info-title">🔬 Teknik Altyapı</div>
+    <div class="tech-tags">
+        <span class="tech-tag">RSA-PSS</span>
+        <span class="tech-tag">SHA-256</span>
+        <span class="tech-tag">Ed25519</span>
+        <span class="tech-tag">X.509</span>
+        <span class="tech-tag">Python cryptography</span>
+        <span class="tech-tag">Flask</span>
+        <span class="tech-tag">SQLite</span>
+        <span class="tech-tag">Docker</span>
+    </div>
+</div>
 {% endblock %}
