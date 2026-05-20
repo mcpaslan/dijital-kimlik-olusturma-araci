@@ -36,8 +36,8 @@ def create_app(test=False, db_path=None):
         # Tabloları oluştur
         db.create_all()
         
-        # Migration: Eksik column'ları ekle (development mode'da)
-        if not test and os.environ.get("FLASK_ENV") != "production":
+        # Migration: Eksik column'ları ekle (otomatik kontrol)
+        if not test:
             try:
                 from sqlalchemy import inspect
                 inspector = inspect(db.engine)

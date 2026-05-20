@@ -48,6 +48,8 @@ def sign():
                 result = sign_text(text, private_key)
                 result["type"] = "text"
                 result["original_data"] = text
+                result["filename"] = "metin_imzasi.txt"
+                result["sig_content"] = create_sig_file_content(result, "metin_imzasi.txt")
 
             elif sign_type == "file":
                 # Dosya imzalama

@@ -33,6 +33,13 @@
                 <textarea class="form-control" id="text_input" name="text_input"
                     placeholder="İmzalanacak metni buraya yazın..."
                     required>{% if result and result.type == 'text' %}{{ result.original_data }}{% endif %}</textarea>
+                <div class="live-hash-container" style="margin-top: 0.75rem; display: none;">
+                    <div style="font-size: 0.72rem; color: #94a3b8; font-weight: 550; display: flex; align-items: center; gap: 0.35rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                        <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #10b981; animation: pulseGlow 1.5s ease-in-out infinite; box-shadow: 0 0 6px #10b981;"></span>
+                        SHA-256 Hash Önizleme:
+                    </div>
+                    <code id="live-hash-val" style="display: block; font-family: var(--font-mono); font-size: 0.75rem; color: #a855f7; background: rgba(15, 23, 42, 0.45); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(148, 163, 184, 0.1); margin-top: 0.35rem; word-break: break-all; text-shadow: 0 0 5px rgba(168, 85, 247, 0.3);"></code>
+                </div>
             </div>
             <div class="form-group">
                 <label for="private_key_file_text">Private Key Dosyası (.pem)</label>
@@ -64,7 +71,7 @@
 
 {% if result %}
 <!-- İmzalama Sonucu -->
-<div class="card" style="margin-top: 1.5rem;">
+<div class="card success-reveal" style="margin-top: 1.5rem;">
     <div class="card-title">✅ İmzalama Sonucu</div>
     <div class="result-box">
         <div class="result-row">
@@ -85,17 +92,15 @@
         </div>
     </div>
 
-    <div class="btn-group" style="margin-top: 1rem;">
+    <div class="btn-group" style="margin-top: 1rem; display: flex; gap: 0.75rem; align-items: center;">
         {% if result.type == 'text' %}
         <button type="button" class="btn btn-outline" onclick="copySignature()">📋 İmzayı Kopyala</button>
         {% endif %}
-        {% if result.type == 'file' %}
-        <form method="POST" action="{{ url_for('signing.download_sig') }}">
+        <form method="POST" action="{{ url_for('signing.download_sig') }}" style="display: inline;">
             <input type="hidden" name="sig_content" value="{{ result.sig_content }}">
             <input type="hidden" name="filename" value="{{ result.filename }}">
             <button type="submit" class="btn btn-success">⬇️ İmza Dosyası İndir (.sig)</button>
         </form>
-        {% endif %}
     </div>
 </div>
 {% endif %}

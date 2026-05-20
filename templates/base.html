@@ -8,9 +8,43 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='1.2') }}">
 </head>
 <body>
+    <!-- İnteraktif Partikül Arka Planı (Tüm Sayfalarda Aktif) -->
+    <canvas id="particles-canvas" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; opacity: 0.85;"></canvas>
+
+    {% if request.endpoint == 'index' %}
+    <script>
+        (function() {
+            const isFirstTime = !sessionStorage.getItem('intro_shown');
+            const navs = performance.getEntriesByType('navigation');
+            const isReload = navs.length > 0 && navs[0].type === 'reload';
+            if (!isFirstTime && !isReload) {
+                const style = document.createElement('style');
+                style.innerHTML = '#intro-overlay { display: none !important; }';
+                document.head.appendChild(style);
+            }
+        })();
+    </script>
+    <!-- Giriş Sinematik Kriptografi Animasyon Overlay -->
+    <div id="intro-overlay">
+        <div class="intro-content">
+            <div class="intro-rings">
+                <div class="intro-ring ring-outer"></div>
+                <div class="intro-ring ring-middle"></div>
+                <div class="intro-ring ring-inner">🔐</div>
+            </div>
+            <h2 class="intro-title">SECURE SIGN SHIELD</h2>
+            <p class="intro-subtitle">Kriptografik Modüller Yükleniyor...</p>
+            <div class="intro-progress-bar">
+                <div class="intro-progress"></div>
+            </div>
+            <div class="intro-skip">Geçmek için Tıklayın, Kaydırın veya Tuşa Basın</div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Navbar -->
     <nav class="navbar">
         <div class="navbar-inner">
@@ -28,12 +62,12 @@
         </div>
     </nav>
 
-    <!-- Flash Messages -->
+    <!-- Flash Messages & Page Transition Wrapper -->
     <div class="container">
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
         {% for category, message in messages %}
-        <div class="alert alert-{{ category }}">
+        <div class="alert alert-{{ category }} fade-up">
             {% if category == 'success' %}✅{% elif category == 'error' %}❌{% elif category == 'warning' %}⚠️{% else %}ℹ️{% endif %}
             {{ message }}
         </div>
@@ -41,13 +75,16 @@
         {% endif %}
         {% endwith %}
 
-        {% block content %}{% endblock %}
+        <!-- Akıcı sayfa geçiş efekti sarmalayıcısı -->
+        <div class="page-container">
+            {% block content %}{% endblock %}
+        </div>
     </div>
 
     <!-- Footer -->
     <footer class="footer">
         <p>🔐 Dijital İmza Oluşturma ve Doğrulama Aracı — Bilgisayar Güvenliği Dersi Projesi</p>
-        <p>RSA-PSS + SHA-256 | Python Flask | 2026</p>
+        <p>RSA-PSS + SHA-256 + Ed25519 | Python Flask | 2026</p>
     </footer>
 
     <!-- Help Modal -->
@@ -64,7 +101,7 @@
         </div>
     </div>
 
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js', v='1.2') }}"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

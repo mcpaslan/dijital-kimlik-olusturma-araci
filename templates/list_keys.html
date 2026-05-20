@@ -27,7 +27,7 @@
                     <td>{{ user.id }}</td>
                     <td><strong>{{ user.common_name }}</strong></td>
                     <td>{{ user.email }}</td>
-                    <td><span class="badge badge-success">RSA-{{ user.key_size }}</span></td>
+                    <td><span class="badge badge-success">{{ user.key_algorithm }}-{{ user.key_size }}</span></td>
                     <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M') if user.created_at else 'N/A' }}</td>
                     <td>
                         <a href="{{ url_for('certificates.create') }}" class="btn btn-outline btn-sm">📜 Sertifika Oluştur</a>

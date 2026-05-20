@@ -81,6 +81,7 @@ def verify():
         # İmza bilgisini al
         signature_b64 = ""
         sig_file = request.files.get("sig_file")
+        
         if sig_file and sig_file.filename:
             sig_content = sig_file.read().decode("utf-8")
             if not sig_content.strip():
@@ -93,7 +94,16 @@ def verify():
                 flash("İmza dosyası (.sig) formatı hatalı.", "error")
                 return render_template("verify.html")
         else:
-            signature_b64 = request.form.get("signature_input", "").strip()
+            signature_input = request.form.get("signature_input", "").strip()
+            # Eğer kullanıcı imza kutusuna doğrudan .sig dosyasının içeriğini kopyalayıp yapıştırdıysa otomatik parse et
+            if "BEGIN DIGITAL SIGNATURE" in signature_input or "Signature:" in signature_input:
+                try:
+                    sig_data = parse_sig_file(signature_input)
+                    signature_b64 = sig_data.get("signature_b64", "")
+                except Exception:
+                    signature_b64 = signature_input
+            else:
+                signature_b64 = signature_input
 
         if not signature_b64:
             flash("Lütfen imza değerini girin veya .sig dosyası yükleyin.", "error")
